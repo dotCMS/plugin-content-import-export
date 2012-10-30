@@ -1,0 +1,29 @@
+<!-- Use this file to add front end struts actions. You override backend portal struts action by providing an 
+Action with the same path attribute or a form-bean with the same name  -->
+<form-bean name="ContentImporterForm" type="org.dotcms.plugins.contentImporter.portlet.form.ContentImporterForm"></form-bean>
+<form-bean name="ContentExporterForm" type="org.dotcms.plugins.contentImporter.portlet.form.ContentExporterForm"></form-bean>
+<form-bean name="ImportExternalContentletsForm" type="org.dotcms.plugins.contentImporter.portlet.form.ImportExternalContentletsForm"></form-bean>
+
+<action path="/ext/content_importer/view_jobs" type="org.dotcms.plugins.contentImporter.portlet.struts.ViewContentImporterJobsAction">
+	<forward name="portlet.ext.plugins.content.importer.struts.view" path="portlet.ext.plugins.content.importer.struts.view" />
+	<forward name="portlet.ext.plugins.content.importer.struts.view.max" path="portlet.ext.plugins.content.importer.struts.view.max" />
+</action>
+
+<action path="/ext/content_importer/edit_job" type="org.dotcms.plugins.contentImporter.portlet.struts.EditContentImporterJobAction" name="ContentImporterForm" scope="request" input="portlet.ext.plugins.content.importer.struts.edit_job" validate="false">
+	<forward name="portlet.ext.plugins.content.importer.struts.edit_job" path="portlet.ext.plugins.content.importer.struts.edit_job"></forward>
+</action>
+
+<action path="/ext/content_importer/import_external_contentlets" type="org.dotcms.plugins.contentImporter.portlet.struts.ImportExternalContentsAction" name="ImportExternalContentletsForm" scope="request" validate="false">
+    <forward name="portlet.ext.plugins.content.importer.struts.import_external_contentlets" path="portlet.ext.plugins.content.importer.struts.import_external_contentlets" />
+    <forward name="portlet.ext.plugins.content.importer.struts.import_external_contentlets_preview" path="portlet.ext.plugins.content.importer.struts.import_external_contentlets_preview" />
+    <forward name="portlet.ext.plugins.content.importer.struts.import_external_contentlets_results" path="portlet.ext.plugins.content.importer.struts.import_external_contentlets_results" />
+</action>
+
+<action path="/ext/content_importer/view_export_jobs" type="org.dotcms.plugins.contentImporter.portlet.struts.ViewContentExportJobsAction">
+	<forward name="portlet.ext.plugins.content.importer.struts.view_export" path="portlet.ext.plugins.content.importer.struts.view_export" />
+	<forward name="portlet.ext.plugins.content.importer.struts.view_export.max" path="portlet.ext.plugins.content.importer.struts.view_export.max" />
+</action>
+
+<action path="/ext/content_importer/edit_export_job" type="org.dotcms.plugins.contentImporter.portlet.struts.EditContentExporterJobAction" name="ContentExporterForm" scope="request" input="portlet.ext.plugins.content.importer.struts.edit_export_job" validate="false">
+	<forward name="portlet.ext.plugins.content.importer.struts.edit_export_job" path="portlet.ext.plugins.content.importer.struts.edit_export_job"></forward>
+</action>
