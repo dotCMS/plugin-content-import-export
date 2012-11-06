@@ -4,33 +4,31 @@ plugin-Automated-Content-Import-Export
 This plugin allows the configuration of a quartz job to import and export content automatically.
 
 The plugin contains a portlet that shows the queue of content to be imported and exported in separated list. 
-Also allows you to add, edit and remove import/export quartz jobs.
+Also the portlet allows you to add, edit and remove import/export quartz jobs.
 
 Configuration:
 ==============
 This plugin allows you to configure the following properties on the conf/plugin.properties file:
 
-1. The portlet.role is the role that a user will need to have in order to add and remove content import tasks in back-end. It's recommended to kepp the default value.
-
+1. The portlet.role is the role that a user will need to have in order to add and remove content import tasks in back-end. It's recommended to keep the default value.
 portlet.role=Content Importer
 
-2. the processedFilePath, indicates where the files are going to be moved once they have been processed
+2. the processedFilePath, indicates where the files are going to be moved once they have been processed.
 processedFilePath=/DotCMS/Uploads/Processed
 
-3. the logFile, indicates where is saved the log file of each files after they have been processed
-
+3. the logFile, indicates where is saved the log file of each files after they have been processed.
 logFile=/DotCMS/Content_Importer_Logs
 
-4. the exportedFilePath, indicates where the exported files are going to be created (this is the default value for the export)
+4. the exportedFilePath, indicates where the exported files are going to be created (this is the default value for the export).
 exportedFilePath=/DotCMS/exported
 
 
 To create/edit/delete an export task 
 ------------------------------------
 
-Go to the dotCMS tab where you included the content import/export portlet and select the option you need execute:
+Go to the dotCMS tab where you included the content import/export portlet and select the option you need to execute:
 
-If you are going to generate a new task, you need to ENTER:
+If you are going to generate a new task, you need to enter:
 
 1. The task name.
 
@@ -42,23 +40,23 @@ If you are going to generate a new task, you need to ENTER:
 
 5. The Language of the content to be exported (multilangue, or just in a particular language).
 
-6. The Fields to export of the structure, if no values are selected, by default is going to export all the fields, if you select some fields, then in the csv are going to be included those fields plus the system fields:identifier, language and country (system properties are always included).
+6. The Fields to export from the structure. If no fields are selected, all the fields in the structure will be exported. If some fields are selected, just those  and the system fields mentioned next will be exported to the csv file:identifier, language and country.
 
 7. The File Paht where the csv file(s) zip file will be located. Here you should specify an existing folder where all the compressed csv file will be exported.
 
-8. The report email. Use this parameter if you want to to receive an email notification with the compressed csv file every time the content export runs. The email could be a comma separated list of emails if more than one person should receive the exorted file.
+8. The report email. Use this parameter if you want to to receive an email notification with the compressed csv file every time the content export runs. This value can be a comma separated list of emails if more than one person should receive the exported file.
 
 9. The CSV Separator Delimiter. This parameter indicates the character that is going to be used to separate the values of the fields in each row in the csv file.
 
-10. The CSV Text Delimiter, this is if you use a " or ' or other symbol to indicate when a text end.
+10. The CSV Text Delimiter. This is if you use a " or ' or other symbol to indicate when a text end.
 
 
 To create/edit/delete an import task 
 ------------------------------------
 
-Go to the dotCMS tab where you included the content import/export portlet and select the option you need execute:
+Go to the dotCMS tab where you included the content import/export portlet and select the option you need to execute:
 
-If you are going to generate a new task, you need to ENTER:
+If you are going to generate a new task, you need to enter:
 
 1. The task name.
 
@@ -78,7 +76,7 @@ If you are going to generate a new task, you need to ENTER:
 
 9. The CSV Separator Delimiter. This parameter indicates the character that is used to separate the values of the fields in each row in the csv file.
 
-10. The CSV Text Delimiter, this is if you use a " or ' or other symbol to indicate when a text end.
+10. The CSV Text Delimiter. This is if you use a " or ' or other symbol to indicate when a text end.
 
 11.  The Publish property. Check it only if you want the process automatically publish the content that will be imported.
 
