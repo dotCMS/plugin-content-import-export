@@ -450,7 +450,7 @@ function submitParent() {
 							startDateCalendar.setTime(startDate);
 						}
 					%>
-					<!--  input type="checkbox" dojoType="dijit.form.CheckBox" checked id="haveStartDate" name="haveStartDate" onclick="checkDate(this, 'startDate')"/ -->
+					<input type="hidden" id="haveStartDate" name="haveStartDate" value="true">
 					<select dojoType="dijit.form.FilteringSelect" style="width: 120px;" name="startDateMonth" id="startDateMonth" onChange="updateDate('startDate');">
 						<%
 							int startDateMonth = -1;
@@ -587,7 +587,7 @@ function submitParent() {
 						}
 					%>
 					<span><img src="/html/images/icons/required.gif"/><%=LanguageUtil.get(pageContext,"to")%>:</span>
-					<!-- input type="checkbox" dojoType="dijit.form.CheckBox" checked id="haveEndDate" name="haveEndDate" onclick="checkDate(this, 'endDate')"/ -->
+					<input type="hidden" id="haveEndDate" name="haveEndDate" value="true">
 					<select dojoType="dijit.form.FilteringSelect" style="width: 120px;" name="endDateMonth" id="endDateMonth" onChange="updateDate('endDate');">
 						<%
 							int endDateMonth = -1;

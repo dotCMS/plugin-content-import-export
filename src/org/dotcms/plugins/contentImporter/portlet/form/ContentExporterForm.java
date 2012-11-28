@@ -17,12 +17,30 @@ public class ContentExporterForm extends SchedulerForm {
 	private long language = -1;
 	private String[] fields = new String[0];
 	private String filePath;
+	private boolean overWriteFile=false;
 	private String reportEmail;
 	private String csvSeparatorDelimiter;
 	private String csvTextDelimiter;
 	private String cronExpression;
 	private boolean haveCronExpression;
 	
+	
+	/**
+	 * Indicates if the current file should be overwritten
+	 * @return boolean
+	 */
+	public boolean isOverWriteFile() {
+		return overWriteFile;
+	}
+
+	/**
+	 * Set if the current file should be overwritten
+	 * @param overWriteFile
+	 */
+	public void setOverWriteFile(boolean overWriteFile) {
+		this.overWriteFile = overWriteFile;
+	}
+
 	/**
 	 * Indicate if a cron expression was set
 	 * @return boolean

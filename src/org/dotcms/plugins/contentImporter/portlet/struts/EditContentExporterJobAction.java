@@ -357,7 +357,7 @@ public class EditContentExporterJobAction extends DotPortletAction {
 
 		if (UtilMethods.isSet(contentExporterForm.getFilePath()))
 			properties.put("filePath", contentExporterForm.getFilePath());
-
+		
 		if (UtilMethods.isSet(contentExporterForm.getReportEmail()))
 			properties.put("reportEmail", contentExporterForm.getReportEmail());
 
@@ -370,6 +370,7 @@ public class EditContentExporterJobAction extends DotPortletAction {
 		if (UtilMethods.isSet(contentExporterForm.getLanguage()))
 			properties.put("language",Long.toString(contentExporterForm.getLanguage()));
 
+		properties.put("overWriteFile", contentExporterForm.isOverWriteFile());
 		properties.put("haveCronExpression", contentExporterForm.isHaveCronExpression());
 		properties.put("userId", user.getUserId());
 
@@ -751,6 +752,7 @@ public class EditContentExporterJobAction extends DotPortletAction {
 
 			contentExporterForm.setFields(fields);
 			contentExporterForm.setFilePath((String) properties.get("filePath"));
+			contentExporterForm.setOverWriteFile((Boolean) properties.get("overWriteFile"));
 			contentExporterForm.setReportEmail((String) properties.get("reportEmail"));
 			contentExporterForm.setCsvSeparatorDelimiter((String) properties.get("csvSeparatorDelimiter"));
 			contentExporterForm.setCsvTextDelimiter((String) properties.get("csvTextDelimiter"));			

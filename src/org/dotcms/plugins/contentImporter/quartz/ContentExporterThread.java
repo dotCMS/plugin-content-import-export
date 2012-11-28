@@ -72,6 +72,7 @@ public class ContentExporterThread implements Job {
 			}catch(Exception e4){
 				language = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 			}
+			boolean overWriteFile = (Boolean) properties.get("overWriteFile");
 			String filePath = (String) properties.get("filePath");
 			if(!UtilMethods.isSet(filePath)){
 				filePath = pluginAPI.loadProperty("org.dotcms.plugins.contentImporter", "exportedFilePath");
@@ -105,7 +106,7 @@ public class ContentExporterThread implements Job {
 			}
 
 			String userId = (String) properties.get("userId");
-			downloadToExcel(structure,fields, language, isMultilanguage, csvTextDelimiter, csvSeparatorDelimiter, filePath, reportEmail,userId);
+			downloadToExcel(structure,fields, language, isMultilanguage, csvTextDelimiter, csvSeparatorDelimiter, filePath,overWriteFile, reportEmail,userId);
 			Logger.info(ContentExporterThread.class, "Finished Export Content process");
 
 		} catch (Exception e1) {
@@ -126,7 +127,7 @@ public class ContentExporterThread implements Job {
 	 * @param userId
 	 * @throws DotSecurityException
 	 */
-	private void downloadToExcel(Structure st, List<Field> fields,long language, boolean isMultilanguage, String csvTextDelimiter, String csvSeparatorDelimiter, String filePath, String reportEmail, String userId) throws DotSecurityException{
+	private void downloadToExcel(Structure st, List<Field> fields,long language, boolean isMultilanguage, String csvTextDelimiter, String csvSeparatorDelimiter, String filePath, boolean overWriteFile, String reportEmail, String userId) throws DotSecurityException{
 		PrintWriter pr = null;
 		try {
 			User user = APILocator.getUserAPI().loadUserById(userId, APILocator.getUserAPI().getSystemUser(), false);			
@@ -136,7 +137,12 @@ public class ContentExporterThread implements Job {
 			}
 			List<ContentletSearch> contentletsReducedList = conAPI.searchIndex(query, 0, 0, "modDate asc", user, false);
 
-			String fileName = st.getVelocityVarName()+"_"+UtilMethods.dateToHTMLDate(new Date(), "MMddyyyyHHmmss")+".csv";
+			String fileName = st.getVelocityVarName();
+			if(!overWriteFile){
+				fileName=fileName+"_"+UtilMethods.dateToHTMLDate(new Date(), "MMddyyyyHHmmss");
+			}
+			fileName=fileName+".csv";
+			
 			File fileDirectory = new File(filePath);
 			if(!fileDirectory.exists()){
 				fileDirectory.mkdir();

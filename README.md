@@ -42,13 +42,15 @@ If you are going to generate a new task, you need to enter:
 
 6. The Fields to export from the structure. If no fields are selected, all the fields in the structure will be exported. If some fields are selected, just those  and the system fields mentioned next will be exported to the csv file:identifier, language and country.
 
-7. The File Paht where the csv file(s) zip file will be located. Here you should specify an existing folder where all the compressed csv file will be exported.
+7. The File Path where the csv file(s) zip file will be located. Here you should specify an existing folder where all the compressed csv file will be exported.
 
-8. The report email. Use this parameter if you want to to receive an email notification with the compressed csv file every time the content export runs. This value can be a comma separated list of emails if more than one person should receive the exported file.
+8. Overwrite export file?. When checked, every execution of the job will overwrite the previously generated file. If not, on every job execution will create a new file.
 
-9. The CSV Separator Delimiter. This parameter indicates the character that is going to be used to separate the values of the fields in each row in the csv file.
+9. The report email. Use this parameter if you want to to receive an email notification with the compressed csv file every time the content export runs. This value can be a comma separated list of emails if more than one person should receive the exported file.
 
-10. The CSV Text Delimiter. This is if you use a " or ' or other symbol to indicate when a text end.
+10. The CSV Separator Delimiter. This parameter indicates the character that is going to be used to separate the values of the fields in each row in the csv file.
+
+11. The CSV Text Delimiter. This is if you use a " or ' or other symbol to indicate when a text end.
 
 
 To create/edit/delete an import task 

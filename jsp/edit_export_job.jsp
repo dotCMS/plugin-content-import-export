@@ -439,7 +439,7 @@ function submitParent() {
 							startDateCalendar.setTime(startDate);
 						}
 					%>
-					<!-- input type="checkbox" dojoType="dijit.form.CheckBox" checked id="haveStartDate" name="haveStartDate" onclick="checkDate(this, 'startDate')"/ -->
+					<input type="hidden" id="haveStartDate" name="haveStartDate" value="true">
 					<select dojoType="dijit.form.FilteringSelect" style="width: 120px;" name="startDateMonth" id="startDateMonth" onChange="updateDate('startDate');">
 						<%
 							int startDateMonth = -1;
@@ -562,7 +562,7 @@ function submitParent() {
 						}
 					%>
 					<span><img src="/html/images/icons/required.gif"/><%=LanguageUtil.get(pageContext,"to")%>:</span>
-					<!-- input type="checkbox" dojoType="dijit.form.CheckBox" checked id="haveEndDate" name="haveEndDate" onclick="checkDate(this, 'endDate')"/ -->
+					<input type="hidden" id="haveEndDate" name="haveEndDate" value="true">
 					<select dojoType="dijit.form.FilteringSelect" style="width: 120px;" name="endDateMonth" id="endDateMonth" onChange="updateDate('endDate');">
 						<%
 							int endDateMonth = -1;
@@ -659,7 +659,7 @@ function submitParent() {
 		
 				<input type="hidden" name="endDate" value="" id="endDate">
 				</dd>
-				<dd>
+			<dd>
 				<img src="/html/images/icons/required.gif"/><%=LanguageUtil.get(pageContext,"content-exporter-frequency")%>
 				<br/><br/><input type="radio" dojoType="dijit.form.RadioButton" <%=!contentExporterForm.isHaveCronExpression()?"checked":""%> id="haveCronExpression2" name="haveCronExpression" value="false" onclick="showRegularDates(this)"/><%=LanguageUtil.get(pageContext,"content-exporter-dont-use-cronexpression")%>
 			    <br/><em><%=LanguageUtil.get(pageContext,"content-exporter-dont-use-cronexpression-hint")%></em>	
@@ -914,10 +914,14 @@ function submitParent() {
 				<br/><em><%=LanguageUtil.get(pageContext,"content-exporter-file-path-hint")%></em>
 			</dt>
 			<dd><input class="form-text" dojoType="dijit.form.TextBox" name="filePath" size="75" id="filePath" value="<%= UtilMethods.isSet(contentExporterForm.getFilePath()) ? contentExporterForm.getFilePath() : "" %>" style="width: 300px;" type="text" ></dd>
+			<dt><%=LanguageUtil.get(pageContext,"content-exporter-overwrite-file")%>:
+				<br/><em><%=LanguageUtil.get(pageContext,"content-exporter-overwrite-file-hint")%></em>
+			</dt>
+			<dd><br/><input type="checkbox" class="form-text" dojoType="dijit.form.CheckBox" name="overWriteFile" id="overWriteFile" value="true" <%= contentExporterForm.isOverWriteFile() ? "checked" : "" %> ></dd>
 			<dt><%=LanguageUtil.get(pageContext,"content-exporter-report-email")%>:
 				<br/><em><%=LanguageUtil.get(pageContext,"content-exporter-report-email-hint")%></em>
 			</dt>
-			<dd><br/><input class="form-text" dojoType="dijit.form.TextBox" name="reportEmail" size="75" id="reportEmail" value="<%= UtilMethods.isSet(contentExporterForm.getReportEmail()) ? contentExporterForm.getReportEmail() : "" %>" style="width: 300px;" type="text" ></dd>
+			<dd><br/><br/><input class="form-text" dojoType="dijit.form.TextBox" name="reportEmail" size="75" id="reportEmail" value="<%= UtilMethods.isSet(contentExporterForm.getReportEmail()) ? contentExporterForm.getReportEmail() : "" %>" style="width: 300px;" type="text" ></dd>
 			<dt><img src="/html/images/icons/required.gif"/><%=LanguageUtil.get(pageContext,"content-exporter-csv-separator-delimiter")%>:
 				<br/><em><%=LanguageUtil.get(pageContext,"content-exporter-csv-separator-delimiter-hint")%></em>
 			</dt>
