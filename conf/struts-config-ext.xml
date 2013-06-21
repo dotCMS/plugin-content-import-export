@@ -1,0 +1,12 @@
+<!-- Use this file to add front end struts actions. You override backend portal struts action by providing an 
+Action with the same path attribute or a form-bean with the same name  -->
+<form-bean name="ContentImporterForm" type="org.dotcms.plugins.contentImporter.portlet.form.ContentImporterForm"></form-bean>
+
+<action path="/ext/content_importer/view_jobs" type="org.dotcms.plugins.contentImporter.portlet.struts.ViewContentImporterJobsAction">
+	<forward name="portlet.ext.plugins.content.importer.struts.view" path="portlet.ext.plugins.content.importer.struts.view" />
+	<forward name="portlet.ext.plugins.content.importer.struts.view.max" path="portlet.ext.plugins.content.importer.struts.view.max" />
+</action>
+
+<action path="/ext/content_importer/edit_jobs" type="org.dotcms.plugins.contentImporter.portlet.struts.EditContentImporterJobAction" name="ContentImporterForm" scope="request" input="portlet.ext.plugins.content.importer.struts.edit_job" validate="false">
+	<forward name="portlet.ext.plugins.content.importer.struts.edit_job" path="portlet.ext.plugins.content.importer.struts.edit_job"></forward>
+</action>
