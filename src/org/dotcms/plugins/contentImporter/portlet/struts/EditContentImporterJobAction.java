@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.StringTokenizer;
 
 import javax.portlet.ActionRequest;
@@ -19,9 +20,10 @@ import org.apache.struts.action.ActionMapping;
 import org.dotcms.plugins.contentImporter.portlet.form.ContentImporterForm;
 
 import com.dotmarketing.portal.struts.DotPortletAction;
-import com.dotmarketing.portlets.scheduler.model.Scheduler;
+import com.dotmarketing.quartz.CronScheduledTask;
+import com.dotmarketing.quartz.QuartzUtils;
+import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.QuartzUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
 import com.dotmarketing.util.WebKeys;
@@ -43,7 +45,7 @@ public class EditContentImporterJobAction extends DotPortletAction {
 		//get the user
 		User user = _getUser(req);
 
-		Scheduler scheduler = null;
+		CronScheduledTask scheduler = null;
 
 		try {
 			Logger.debug(this, "I'm retrieving the schedule");
@@ -102,7 +104,7 @@ public class EditContentImporterJobAction extends DotPortletAction {
 					}
 				}
 
-				if (contentImporterForm.getStructure() < 1) {
+				if (!UtilMethods.isSet(contentImporterForm.getStructure())) {
 					SessionMessages.add(req, "error", "message.content.importer.structure.required");
 					hasErrors = true;
 				}
@@ -114,8 +116,8 @@ public class EditContentImporterJobAction extends DotPortletAction {
 
 				if ((contentImporterForm.getFields() != null) && (0 < contentImporterForm.getFields().length)) {
 					boolean containsIdentifier = false;
-					for (long key: contentImporterForm.getFields()) {
-						if (key == 0) {
+					for (String key: contentImporterForm.getFields()) {
+						if (key.equals("0")) {
 							containsIdentifier = true;
 							break;
 						}
@@ -129,7 +131,7 @@ public class EditContentImporterJobAction extends DotPortletAction {
 
 						if (scheduler != null) {
 							_populateForm(form, scheduler);
-							contentImporterForm.setHashMap(scheduler.getProperties());
+							contentImporterForm.setMap(scheduler.getProperties());
 						}
 
 						String redirect = req.getParameter("referrer");
@@ -141,11 +143,11 @@ public class EditContentImporterJobAction extends DotPortletAction {
 					} else {
 						SessionMessages.clear(req);
 						SessionMessages.add(req, "error", "message.Scheduler.invalidJobSettings");
-						contentImporterForm.setHashMap(getSchedulerProperties(req, contentImporterForm));
+						contentImporterForm.setMap(getSchedulerProperties(req, contentImporterForm));
 						loadEveryDayForm(form, req);
 					}
 				} else {
-					contentImporterForm.setHashMap(getSchedulerProperties(req, contentImporterForm));
+					contentImporterForm.setMap(getSchedulerProperties(req, contentImporterForm));
 					loadEveryDayForm(form, req);
 				}
 			}
@@ -237,12 +239,12 @@ public class EditContentImporterJobAction extends DotPortletAction {
 		}
 	}
 
-	private HashMap<String, String> getSchedulerProperties(ActionRequest req, ContentImporterForm contentImporterForm) {
-		HashMap<String, String> properties = new HashMap<String, String>(5);
+	private Map<String, String> getSchedulerProperties(ActionRequest req, ContentImporterForm contentImporterForm) {
+		Map<String, String> properties = new HashMap<String, String>(5);
 		Enumeration<String> propertiesNames = req.getParameterNames();
 
-		if (UtilMethods.isSet(contentImporterForm.getHashMap())) {
-			properties = contentImporterForm.getHashMap();
+		if (UtilMethods.isSet(contentImporterForm.getMap())) {
+			properties = contentImporterForm.getMap();
 		}
 		else {
 			String propertyName;
@@ -262,13 +264,19 @@ public class EditContentImporterJobAction extends DotPortletAction {
 		return properties;
 	}
 
-	private Scheduler _retrieveScheduler(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form) throws Exception {
+	private CronScheduledTask _retrieveScheduler(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form) throws Exception {
 		ContentImporterForm contentImporterForm = (ContentImporterForm) form;
-
-		if (UtilMethods.isSet(contentImporterForm.getJobGroup()))
-			return QuartzUtils.getScheduler(contentImporterForm.getJobName(), contentImporterForm.getJobGroup());
+		List<ScheduledTask> results = null;
+		if (UtilMethods.isSet(contentImporterForm.getJobGroup())){
+			results = (List<ScheduledTask>) QuartzUtils.getStandardScheduledTask(contentImporterForm.getJobName(), contentImporterForm.getJobGroup());
+		} else{
+			results = (List<ScheduledTask>) QuartzUtils.getStandardScheduledTask(req.getParameter("name"), req.getParameter("group"));
+		}
+		
+		if(results.size() > 0)
+			return (CronScheduledTask) results.get(0);
 		else
-			return QuartzUtils.getScheduler(req.getParameter("name"), req.getParameter("group"));
+			return null;
 	}
 
 	private static boolean _saveScheduler(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user) throws Exception {
@@ -293,14 +301,14 @@ public class EditContentImporterJobAction extends DotPortletAction {
 			}
 		}
 
-		HashMap<String, String> properties = new HashMap<String, String>(10);
+		Map<String, Object> properties = new HashMap<String, Object>(10);
 
 		properties.put("structure", "" + contentImporterForm.getStructure());
 
 		if ((contentImporterForm.getFields() != null) && (0 < contentImporterForm.getFields().length)) {
 			StringBuilder fields = new StringBuilder(64);
 			fields.ensureCapacity(8);
-			for (long field: contentImporterForm.getFields()) {
+			for (String field: contentImporterForm.getFields()) {
 				if (0 < fields.length())
 					fields.append("," + field);
 				else
@@ -398,47 +406,55 @@ public class EditContentImporterJobAction extends DotPortletAction {
 
 		String cronExpression = cronSecondsField + " " + cronMinutesField + " " + cronHoursField + " " + cronDaysOfMonthField + " " + cronMonthsField + " " + cronDaysOfWeekField + " " + cronYearsField;
 
-		result = QuartzUtils.saveScheduler(contentImporterForm.getJobName(),
-				contentImporterForm.getJobGroup(),
-				contentImporterForm.getJobDescription(),
-				"org.dotcms.plugins.contentImporter.quartz.ContentImporterThread",
-				properties,
-				startDate,
-				endDate,
-				cronExpression);
+		CronScheduledTask job = new CronScheduledTask();
+		job.setJobName(contentImporterForm.getJobName());
+		job.setJobGroup(contentImporterForm.getJobGroup());
+		job.setJobDescription(contentImporterForm.getJobDescription());
+		job.setJavaClassName("org.dotcms.plugins.contentImporter.quartz.ContentImporterThread");
+		job.setProperties(properties);
+		job.setStartDate(startDate);
+		job.setEndDate(endDate);
+		job.setCronExpression(cronExpression);
+
+		try {
+			QuartzUtils.scheduleTask(job);
+		}catch(Exception e){
+			Logger.error(EditContentImporterJobAction.class, e.getMessage(),e);
+			return false;
+		}
 
 		SessionMessages.add(req, "message", "message.Scheduler.saved");
 
-		return result;
+		return true;
 	}
 
 	private void _deleteScheduler(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form , User user) throws Exception {
 		ContentImporterForm contentImporterForm = (ContentImporterForm) form;
 
 		if (UtilMethods.isSet(contentImporterForm.getJobGroup()))
-			QuartzUtils.deleteScheduler(contentImporterForm.getJobName(), contentImporterForm.getJobGroup());
+			QuartzUtils.removeJob(contentImporterForm.getJobName(), contentImporterForm.getJobGroup());
 		else
-			QuartzUtils.deleteScheduler(req.getParameter("name"), req.getParameter("group"));
+			QuartzUtils.removeJob(req.getParameter("name"), req.getParameter("group"));
 
 		SessionMessages.add(req, "message", "message.Scheduler.delete");
 	}
 
-	private void _populateForm(ActionForm form, Scheduler scheduler) {
+	private void _populateForm(ActionForm form, CronScheduledTask scheduler) {
 		try {
 			BeanUtils.copyProperties(form, scheduler);
 			ContentImporterForm contentImporterForm = ((ContentImporterForm) form);
-			
+
 			SimpleDateFormat sdf = new SimpleDateFormat(WebKeys.DateFormats.DOTSCHEDULER_DATE2);
 
 			if (scheduler.getStartDate() != null) {
-				contentImporterForm.setHaveStartDate(true);
+				contentImporterForm.setHaveStartDate(true);				
 			} else {
 				contentImporterForm.setHaveStartDate(true);
 				contentImporterForm.setStartDate(sdf.format(new Date()));
 			}
 
 			if (scheduler.getEndDate() != null) {
-				contentImporterForm.setHaveEndDate(true);
+				contentImporterForm.setHaveEndDate(true);			
 			} else {
 				contentImporterForm.setHaveEndDate(true);
 				contentImporterForm.setEndDate(sdf.format(new Date()));
@@ -660,20 +676,20 @@ public class EditContentImporterJobAction extends DotPortletAction {
 				}
 			}
 
-			HashMap properties = scheduler.getProperties();
-			contentImporterForm.setStructure(Long.parseLong((String) properties.get("structure")));
+			Map properties = scheduler.getProperties();
+			contentImporterForm.setStructure((String) properties.get("structure"));
 
-			long[] fields = {};
+			String[] fields = {};
 			if (UtilMethods.isSet(properties.get("fields"))) {
 				String[] strFields = ((String) properties.get("fields")).split(",");
-				List<Long> longFields = new ArrayList<Long>(strFields.length);
+				List<String> longFields = new ArrayList<String>(strFields.length);
 				for (String field: strFields) {
-					longFields.add(Long.parseLong(field));
+					longFields.add(field);
 				}
 
-				long[] tempArray = new long[longFields.size()];
+				String[] tempArray = new String[longFields.size()];
 				for (int pos = 0; pos < longFields.size(); ++pos) {
-					tempArray[pos] = longFields.get(pos).longValue();
+					tempArray[pos] = longFields.get(pos);
 				}
 				fields = tempArray;
 			}

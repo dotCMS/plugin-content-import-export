@@ -1,4 +1,4 @@
-package com.dotmarketing.portlets.contentlet.util;
+package org.dotcms.plugins.contentImporter.util;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -17,14 +17,15 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
-import com.dotmarketing.cms.factories.PublicRoleFactory;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.DotHibernate;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.factories.HostFactory;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.action.ImportContentletsAction;
@@ -39,19 +40,18 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.factories.TagFactory;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.LuceneUtils;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.Role;
+import com.dotmarketing.util.lucene.LuceneUtils;
 import com.liferay.portal.model.User;
 
 public class ContentletUtil {
-	
+
 	//API
 	private PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 	private ContentletAPI conAPI = APILocator.getContentletAPI();
 	private CategoryAPI catAPI = APILocator.getCategoryAPI();
 	private LanguageAPI langAPI = APILocator.getLanguageAPI();
-	
+
 	//Final Variables
 	public final static String languageCodeHeader = "languageCode";
 	public final static String countryCodeHeader = "countryCode";
@@ -59,8 +59,8 @@ public class ContentletUtil {
 	private int identifierFieldPosition = -1;
 	private int languageFieldPosition = -1;
 	private int countryFieldPosition = -1;
-	
-	private Host defaultHost = HostFactory.getDefaultHost();
+	private User systemUser = null;
+	private Host defaultHost = null;
 
 	//Temp maps used to parse the file
 	private HashMap<Integer, Field> headers;
@@ -81,28 +81,30 @@ public class ContentletUtil {
 	private int sleepTime = 200;
 	private Role CMSAdmin; 
 	private List<Permission> structurePermissions;
-	
+
 	//Field from the Action
 	private Reader reader;
 	private CsvReader csvreader;
 	private String[] csvHeaders;	
-	
+
 	public ContentletUtil(Reader reader, CsvReader csvreader)
 	{
 		try
 		{
-		this.reader = reader;
-		this.csvreader = csvreader;
-		this.csvHeaders = csvreader.getHeaders();
+			this.reader = reader;
+			this.csvreader = csvreader;
+			this.csvHeaders = csvreader.getHeaders();
+			this.systemUser = APILocator.getUserAPI().getSystemUser();
+			this.defaultHost = WebAPILocator.getHostWebAPI().findDefaultHost(systemUser, false);
 		}
 		catch(Exception ex)
 		{
 			throw new DotRuntimeException(ex.getMessage(),ex);
 		}
 	}
-		
-	public HashMap<String, List<String>> importFile(long structure, long[] keyfields, boolean preview,User user,boolean isMultilingual, long language,boolean publishContent)
-	throws DotRuntimeException 
+
+	public HashMap<String, List<String>> importFile(String structure, String[] keyfields, boolean preview,User user,boolean isMultilingual, long language,boolean publishContent)
+	throws DotRuntimeException, DotDataException 
 	{
 		if (!preview && DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)) {
 			ReindexThread.getInstance().pause();
@@ -113,9 +115,9 @@ public class ContentletUtil {
 		results.put("messages", new ArrayList<String>());
 		results.put("results", new ArrayList<String>());
 
-		Structure st = StructureCache.getStructureByInode (structure);
+		Structure st = StructureCache.getStructureByInode(structure);
 		try {
-			CMSAdmin = PublicRoleFactory.getCMSAdminRole();
+			CMSAdmin = APILocator.getRoleAPI().loadCMSAdminRole();
 		} catch (Exception e1) {
 			Logger.error (this, "importFile: failed retrieving the CMSAdmin role.", e1);
 			throw new DotRuntimeException (e1.getMessage());
@@ -141,10 +143,10 @@ public class ContentletUtil {
 		//Parsing the file line per line
 		try {
 			if ((csvHeaders != null) || (csvreader.readHeaders())) {
-				
+
 				boolean isIdentifierKeyField = false;
-				for (long key: keyfields) {
-					if (key == 0) {
+				for (String key: keyfields) {
+					if (key.equals("0")) {
 						isIdentifierKeyField = true;
 						break;
 					}
@@ -174,7 +176,7 @@ public class ContentletUtil {
 								importLine(csvLine, st, preview, lineNumber, isIdentifierKeyField, isMultilingual, user, results,language,publishContent);
 							} else {								
 								dotCMSLanguage = langAPI.getLanguage(csvLine[languageFieldPosition], csvLine[countryFieldPosition]);
-								
+
 								if (0 < dotCMSLanguage.getId()) {
 									importLine(csvLine, st, preview, lineNumber, isIdentifierKeyField,isMultilingual, user, results,dotCMSLanguage.getId(),publishContent);
 								} else {
@@ -244,21 +246,21 @@ public class ContentletUtil {
 
 				}
 		}	
-		
-		
+
+
 		Logger.info(this, lines + " lines read correctly. " + errors + " errors found.");
 
 		return results;
 	}
-	
+
 	private void importHeaders(String[] headerLine, 
-			                   Structure structure, 
-			                   long[] keyFieldsInodes, 
-			                   boolean isIdentifierKeyField,							   
-			                   boolean preview, 
-			                   boolean isMultilingual, 
-			                   User user, 
-			                   HashMap<String,List<String>> results) 
+			Structure structure, 
+			String[] keyFieldsInodes, 
+			boolean isIdentifierKeyField,							   
+			boolean preview, 
+			boolean isMultilingual, 
+			User user, 
+			HashMap<String,List<String>> results) 
 	throws DotRuntimeException {
 
 		int importableFields = 0;
@@ -293,8 +295,8 @@ public class ContentletUtil {
 					else {
 						found = true;
 						headers.put(i, field);
-						for (long fieldInode : keyFieldsInodes) {
-							if (fieldInode == field.getInode())
+						for (String fieldInode : keyFieldsInodes) {
+							if (fieldInode.equals(field.getInode()))
 								keyFields.put(i, field);
 						}
 						break;
@@ -332,10 +334,10 @@ public class ContentletUtil {
 		}
 
 		//Checking keyField selected by the user against the headers
-		for (long keyField : keyFieldsInodes) {
+		for (String keyField : keyFieldsInodes) {
 			boolean found = false;
 			for (Field headerField : headers.values()) {
-				if (headerField.getInode() == keyField) {
+				if (headerField.getInode().equals(keyField)) {
 					found = true;
 					break;
 				}
@@ -359,17 +361,17 @@ public class ContentletUtil {
 			results.get("warnings").add("Not all the structure fields were matched against the file headers. Some content fields could be left empty.");
 		}
 	}
-	
+
 	private void importLine(String[] line, 
-							Structure structure, 
-							boolean preview,
-							int lineNumber,
-							boolean isIdentifierKeyField,
-							boolean isMultilingual, 
-							User user, 
-							HashMap<String, List<String>> results, 							 
-							long language,
-							boolean publishContent)
+			Structure structure, 
+			boolean preview,
+			int lineNumber,
+			boolean isIdentifierKeyField,
+			boolean isMultilingual, 
+			User user, 
+			HashMap<String, List<String>> results, 							 
+			long language,
+			boolean publishContent)
 	throws DotRuntimeException {
 		try {			
 			//Building a values HashMap based on the headers/columns position			
@@ -483,17 +485,17 @@ public class ContentletUtil {
 				}
 				values.put(column, valueObj);
 			}
-						
+
 			//Searching contentlets to be updated by key fields
 			List<Contentlet> contentlets = new ArrayList<Contentlet>();
 			HashMap<String,String> conditionMap = new HashMap<String,String>();
 			String conditionValues = "";
 			StringBuffer buffy = new StringBuffer();
-			
+
 			buffy.append("+structureInode:" + structure.getInode() + " +working:true +deleted:false +languageId:" + language);
 
 			if (keyFields.size() > 0 || ((isIdentifierKeyField) && UtilMethods.isSet(line[identifierFieldPosition]))) {
-				
+
 				if ((isIdentifierKeyField) && UtilMethods.isSet(line[identifierFieldPosition])) {
 					buffy.append(" +identifier:" + line[identifierFieldPosition]);
 					conditionValues += line[identifierFieldPosition] + "-";
@@ -547,11 +549,11 @@ public class ContentletUtil {
 				j=0;
 				i=0;
 				int matchingFields=0;
-				List<Contentlet> cons = conAPI.checkout(buffy.toString(), user, true); 
+				List<Contentlet> cons = conAPI.checkoutWithQuery(buffy.toString(), user, true); 
 				for (Contentlet con : cons) 
 				{	
 					if ((isIdentifierKeyField) && UtilMethods.isSet(line[identifierFieldPosition])) {
-						if (con.getIdentifier() == Long.parseLong(line[identifierFieldPosition])) {
+						if (con.getIdentifier().equals(line[identifierFieldPosition])) {
 							contentlets.add(con);
 							continue;
 						}
@@ -566,7 +568,7 @@ public class ContentletUtil {
 							if(cat.getKey().equals(categorykeyFields[j]))
 								matchingFields++;
 							j++;
-							
+
 						}	
 						else {
 							if(conAPI.getFieldValue(con, field).toString().equalsIgnoreCase(value.toString()))
@@ -588,7 +590,7 @@ public class ContentletUtil {
 				Contentlet newCont = new Contentlet();
 				boolean setLive = (publishContent ? true : false);
 				newCont.setLive(setLive);				
-					
+
 				newCont.setWorking(true);
 				newCont.setStructureInode(structure.getInode());
 				newCont.setLanguageId(language);
@@ -597,17 +599,17 @@ public class ContentletUtil {
 			} else {
 				if (isMultilingual) {
 					List<Contentlet> multilingualContentlets = new ArrayList<Contentlet>();
-					
+
 					for (Contentlet contentlet: contentlets) {
 						if (contentlet.getLanguageId() == language)
 							multilingualContentlets.add(contentlet);
 					}
-					
+
 					if (multilingualContentlets.size() == 0) {
-						long lastIdentifier = 0 ;
+						String lastIdentifier = "";
 						isNew = true;
 						for (Contentlet contentlet: contentlets) {
-							if (contentlet.getIdentifier() != lastIdentifier) {
+							if (!contentlet.getIdentifier().equals(lastIdentifier)) {
 								newContentCounter++;
 								Contentlet newCont = new Contentlet();
 								newCont.setIdentifier(contentlet.getIdentifier());
@@ -617,12 +619,12 @@ public class ContentletUtil {
 								newCont.setStructureInode(structure.getInode());
 								newCont.setLanguageId(language);
 								multilingualContentlets.add(newCont);
-								
+
 								lastIdentifier = contentlet.getIdentifier();
 							}
 						}
 					}
-						
+
 					contentlets = multilingualContentlets;
 				}
 
@@ -639,9 +641,9 @@ public class ContentletUtil {
 					}
 				}
 			}
-			
-			
-			
+
+
+
 			for (Contentlet cont : contentlets) 
 			{
 				//Fill the new contentlet with the data
@@ -653,11 +655,11 @@ public class ContentletUtil {
 							value instanceof String) {
 						String[] tags = ((String)value).split(",");
 						for (String tag : tags) {
-							TagFactory.addTagInode((String)tag.trim(), Long.toString(cont.getInode()));
+							TagFactory.addTagInode((String)tag.trim(), cont.getInode());
 						}
 					}
 				}
-				
+
 				boolean setLive = (publishContent ? true : false);
 				cont.setLive(setLive);
 
@@ -687,7 +689,7 @@ public class ContentletUtil {
 				//If not preview save the contentlet
 				if (!preview) 
 				{
-					cont = conAPI.checkin(cont, new ArrayList<Category>(categories), structurePermissions, user, false);					
+					conAPI.checkin(cont, new ArrayList<Category>(categories), structurePermissions, user, false);					
 				}
 
 				if (isNew){
@@ -709,7 +711,7 @@ public class ContentletUtil {
 			throw new DotRuntimeException(e.getMessage());
 		}
 	}
-	
+
 	public static final String[] IMP_DATE_FORMATS = new String[] { "d-MMM-yy", "MMM-yy", "MMMM-yy", "d-MMM", "dd-MMM-yyyy", 
 		"MM/dd/yy hh:mm aa", "MM/dd/yyyy hh:mm aa",	"MM/dd/yy HH:mm", "MM/dd/yyyy HH:mm", "MMMM dd, yyyy", "M/d/y", "M/d", 
 		"EEEE, MMMM dd, yyyy", "MM/dd/yyyy", "hh:mm:ss aa", "HH:mm:ss", "hh:mm aa" };
@@ -762,13 +764,4 @@ public class ContentletUtil {
 	public int getCountryFieldPosition() {
 		return countryFieldPosition;
 	}
-	
-	//Utility method
-	/*private String lineToString(String[] line) {
-		StringBuffer returnSt = new StringBuffer();
-		for (String st : line) {
-			returnSt.append(st + ",");
-		}
-		return returnSt.toString();
-	}*/
 }

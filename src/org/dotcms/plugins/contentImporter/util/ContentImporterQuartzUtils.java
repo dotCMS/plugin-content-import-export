@@ -11,21 +11,21 @@ import org.quartz.JobDetail;
 import org.quartz.Trigger;
 import org.quartz.impl.StdSchedulerFactory;
 
-import com.dotmarketing.portlets.scheduler.model.Scheduler;
+import com.dotmarketing.quartz.CronScheduledTask;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.QuartzUtils;
+import com.dotmarketing.quartz.QuartzUtils;
 
 public class ContentImporterQuartzUtils extends QuartzUtils {
 	public static String quartzGroup = "DotCMS Content Importer";
 	
-	public static List<Scheduler> getConfiguredSchedulers(String[] groupNames) {
-		List<Scheduler> result = new ArrayList<Scheduler>(10);
+	public static List<CronScheduledTask> getConfiguredSchedulers(String[] groupNames) {
+		List<CronScheduledTask> result = new ArrayList<CronScheduledTask>(10);
 		
 		try {
 			org.quartz.Scheduler sched = StdSchedulerFactory.getDefaultScheduler();
 			
 			String[] jobNames;
-			Scheduler scheduler;
+			CronScheduledTask scheduler;
 			JobDetail jobDetail;
 			
 			for (String groupName: groupNames) {
@@ -35,11 +35,11 @@ public class ContentImporterQuartzUtils extends QuartzUtils {
 					jobDetail = sched.getJobDetail(jobName, groupName);
 					Trigger[] triggers = sched.getTriggersOfJob(jobName, groupName);
 					
-					scheduler = new Scheduler();
+					scheduler = new CronScheduledTask();
 					scheduler.setJobName(jobDetail.getName());
 					scheduler.setJobGroup(jobDetail.getGroup());
 					scheduler.setJobDescription(jobDetail.getDescription());
-					scheduler.setProperties((HashMap<String, String>) jobDetail.getJobDataMap().getWrappedMap());
+					scheduler.setProperties((HashMap<String, Object>) jobDetail.getJobDataMap().getWrappedMap());
 					
 					if ((0 < triggers.length) &&
 						((triggers[0].getEndTime() == null) ||
@@ -48,12 +48,12 @@ public class ContentImporterQuartzUtils extends QuartzUtils {
 						SimpleDateFormat sdf = new SimpleDateFormat(com.dotmarketing.util.WebKeys.DateFormats.DOTSCHEDULER_DATE2);
 						
 						if (triggers[0].getStartTime() != null)
-							scheduler.setStartDate(sdf.format(triggers[0].getStartTime()));
+							scheduler.setStartDate(triggers[0].getStartTime());
 						else
 							scheduler.setStartDate(null);
 						
 						if (triggers[0].getEndTime() != null)
-							scheduler.setEndDate(sdf.format(triggers[0].getEndTime()));
+							scheduler.setEndDate(triggers[0].getEndTime());
 						else
 							scheduler.setEndDate(null);
 						

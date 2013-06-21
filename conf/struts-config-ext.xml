@@ -2,11 +2,19 @@
 Action with the same path attribute or a form-bean with the same name  -->
 <form-bean name="ContentImporterForm" type="org.dotcms.plugins.contentImporter.portlet.form.ContentImporterForm"></form-bean>
 
+<form-bean name="ImportExternalContentletsForm" type="org.dotcms.plugins.contentImporter.portlet.form.ImportExternalContentletsForm"></form-bean>
+
 <action path="/ext/content_importer/view_jobs" type="org.dotcms.plugins.contentImporter.portlet.struts.ViewContentImporterJobsAction">
 	<forward name="portlet.ext.plugins.content.importer.struts.view" path="portlet.ext.plugins.content.importer.struts.view" />
 	<forward name="portlet.ext.plugins.content.importer.struts.view.max" path="portlet.ext.plugins.content.importer.struts.view.max" />
 </action>
 
-<action path="/ext/content_importer/edit_jobs" type="org.dotcms.plugins.contentImporter.portlet.struts.EditContentImporterJobAction" name="ContentImporterForm" scope="request" input="portlet.ext.plugins.content.importer.struts.edit_job" validate="false">
+<action path="/ext/content_importer/edit_job" type="org.dotcms.plugins.contentImporter.portlet.struts.EditContentImporterJobAction" name="ContentImporterForm" scope="request" input="portlet.ext.plugins.content.importer.struts.edit_job" validate="false">
 	<forward name="portlet.ext.plugins.content.importer.struts.edit_job" path="portlet.ext.plugins.content.importer.struts.edit_job"></forward>
 </action>
+
+<action path="/ext/content_importer/import_external_contentlets" type="org.dotcms.plugins.contentImporter.portlet.struts.ImportExternalContentsAction" name="ImportExternalContentletsForm" scope="request" validate="false">
+    <forward name="portlet.ext.plugins.content.importer.struts.import_external_contentlets" path="portlet.ext.plugins.content.importer.struts.import_external_contentlets" />
+    <forward name="portlet.ext.plugins.content.importer.struts.import_external_contentlets_preview" path="portlet.ext.plugins.content.importer.struts.import_external_contentlets_preview" />
+    <forward name="portlet.ext.plugins.content.importer.struts.import_external_contentlets_results" path="portlet.ext.plugins.content.importer.struts.import_external_contentlets_results" />
+ </action>

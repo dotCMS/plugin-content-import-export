@@ -8,9 +8,9 @@ public class ContentImporterForm extends SchedulerForm {
 
 	/** identifier field */    
 	
-	private long structure = 0;
+	private String structure = "";
 	private long language = 0;
-	private long[] fields = new long[0];
+	private String[] fields = new String[0];
 	private String filePath;
 	private String reportEmail;
 	private String csvSeparatorDelimiter;
@@ -107,19 +107,19 @@ public class ContentImporterForm extends SchedulerForm {
 		this.publishContent = publishContent;
 	}
 
-    public long[] getFields() {
+    public String[] getFields() {
         return fields;
     }
 
-    public void setFields(long[] fields) {
+    public void setFields(String[] fields) {
         this.fields = fields;
     }
 
-    public long getStructure() {
+    public String getStructure() {
         return structure;
     }
 
-    public void setStructure(long structure) {
+    public void setStructure(String structure) {
         this.structure = structure;
     }
     

@@ -17,7 +17,7 @@ import org.apache.struts.action.ActionMapping;
 import org.dotcms.plugins.contentImporter.util.ContentImporterQuartzUtils;
 
 import com.dotmarketing.portal.struts.DotPortletAction;
-import com.dotmarketing.portlets.scheduler.model.Scheduler;
+import com.dotmarketing.quartz.CronScheduledTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.util.Constants;
@@ -34,7 +34,7 @@ public class ViewContentImporterJobsAction extends DotPortletAction {
 		Logger.debug(this, "Running ViewContentImporterJobsAction!!!!");
 
 		try {
-			List<Scheduler> list = ContentImporterQuartzUtils.getConfiguredSchedulers(quartzGroup);
+			List<CronScheduledTask> list = ContentImporterQuartzUtils.getConfiguredSchedulers(quartzGroup);
 			
 			if (req.getWindowState().equals(WindowState.NORMAL)) {
 				req.setAttribute(WebKeys.SCHEDULER_VIEW_PORTLET, list);

@@ -2,7 +2,6 @@
 <%@ include file="/html/common/messages_inc.jsp" %>
 <%@ page import="java.util.*" %>
 <%@ page import="com.dotmarketing.beans.Host" %>
-<%@ page import="com.dotmarketing.factories.HostFactory" %>
 <%@ page import="javax.servlet.jsp.PageContext" %>
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
 <%@ page import="org.dotcms.plugins.contentImporter.util.ContentImporterQuartzUtils" %>
@@ -41,10 +40,16 @@
 	}
 	languageMap = new HashMap<String, Object>();
 	languageMap.put("id", -1);
-	languageMap.put("description", "Multilingual File");
+	languageMap.put("description", LanguageUtil.get(pageContext,"content-importer-multilingual-file"));
 	languagesMap.add(languageMap);
 	request.setAttribute("languages", languagesMap);
 %>
+
+
+<%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
+<%@page import="java.text.SimpleDateFormat"%>
+<%@page import="com.liferay.portal.language.LanguageUtil"%>
+<%@page import="com.liferay.util.cal.CalendarUtil"%>
 
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 <liferay:param name="box_title" value="Schedule a Content Import Task" />
@@ -54,74 +59,74 @@
 <script type='text/javascript' src='/dwr/util.js'></script>
 
 <script language="Javascript">
-
-function checkDate(element, fieldName) {
-	if (element.checked) {
-	  	eval("document.getElementById('" + fieldName + "Div').style.visibility = ''");
-	} else {
-		eval("document.getElementById('" + fieldName + "Div').style.visibility = 'hidden'");
+	function checkDate(element, fieldName) {
+		if (element.checked) {
+		  	eval("document.getElementById('" + fieldName + "Div').style.visibility = ''");
+		} else {
+			eval("document.getElementById('" + fieldName + "Div').style.visibility = 'hidden'");
+		}
 	}
-}
+	
+	
+	function <portlet:namespace />setCalendarDate_0(year, month, day){
+		dijit.byId('startDateYear').attr('value', year);
+		dijit.byId('startDateMonth').attr('value', (parseInt(month) - 1));
+		dijit.byId('startDateDay').attr('value', day);
+		updateDate('startDate');
+	}
 
-function <portlet:namespace />setCalendarDate_0(year, month, day) {	  
-	document.forms[0].startDateYear.value = year;
-	document.forms[0].startDateMonth.value = --month;
-	document.forms[0].startDateDay.value = day;
-	updateDate('startDate');
-}
+	function <portlet:namespace />setCalendarDate_1(year, month, day){
+		dijit.byId('endDateYear').attr('value', year);
+		dijit.byId('endDateMonth').attr('value', (parseInt(month) - 1));
+		dijit.byId('endDateDay').attr('value', day);
+		updateDate('endDate');
+	}
 
-function <portlet:namespace />setCalendarDate_1(year, month, day) {	  
-	document.forms[0].endDateYear.value = year;
-	document.forms[0].endDateMonth.value = --month;
-	document.forms[0].endDateDay.value = day;
-	updateDate('endDate');
-}
-
-function <portlet:namespace />setCalendarDate_2(year, month, day) {	  
-	document.forms[0].everyDateYear.value = year;
-	document.forms[0].everyDateMonth.value = --month;
-	document.forms[0].everyDateDay.value = day;
-	updateDateOnly('everyDate');
-}
-
-function setCalendars(fieldName) {
-	eval("var month = document.forms[0]." + fieldName + "Month.value");
-	eval("var day =   document.forms[0]." + fieldName + "Day.value");
-	eval("var year =  document.forms[0]." + fieldName + "Year.value");
-	var date= month + "/" + day + "/" + year;
-	eval("document.forms[0]." + fieldName + ".value = date");
-}
-
-	  function updateDate(field)
-	  {
-	  	eval("var year  = document.forms[0]." + field + "Year.value");
-	  	eval("var month = document.forms[0]." + field + "Month.value");
-	  	month = parseInt(month) + 1;
-	  	eval("var day = document.forms[0]." + field + "Day.value");
-	  	eval("var hour = document.forms[0]." + field + "Hour.value");
-	  	eval("var minute = document.forms[0]." + field + "Minute.value");
-	  	eval("var second = document.forms[0]." + field + "Second.value");
-	  	
-	  	var date = year + "-" + month + "-" + day + " " + hour + ":" + minute + ":" + second;
-	  	eval("document.forms[0]." + field + ".value = date");
-	  }
-	  
-	  function updateDateOnly(field)
-	  {
-	  	eval("var year  = document.forms[0]." + field + "Year.value");
-	  	eval("var month = document.forms[0]." + field + "Month.value");
-	  	month = parseInt(month) + 1;
-	  	eval("var day = document.forms[0]." + field + "Day.value");
-	  	
-	  	var date = year + "-" + month + "-" + day;
-	  	eval("document.forms[0]." + field + ".value = date");
-	  }
-	  
-	  function updateFieldFromDate(field)
-	  {		
-	  	eval("var date = document.forms[0]." + field + ".value");
-	  	var dateAux = date.split(" ")[0];
-	  	var timeAux = date.split(" ")[1];
+	function <portlet:namespace />setCalendarDate_2(year, month, day){
+		dijit.byId('everyDateYear').attr('value', year);
+		dijit.byId('everyDateMonth').attr('value', (parseInt(month) - 1));
+		dijit.byId('everyDateDay').attr('value', day);
+		updateDate('everyDate');
+	}
+	
+	function setCalendars(fieldName) {
+		var month = dijit.byId(fieldName + "Month").value;
+		var day = dijit.byId(fieldName + "Day").value;
+		var year = dijit.byId(fieldName + "Year").value;
+		var date= month + "/" + day + "/" + year;
+		dijit.byId(fieldName).attr('value', date);
+	}
+	
+	function updateDate(field)
+	{
+		var year  = dijit.byId(field + "Year").value;
+		var month = dijit.byId(field + "Month").value;
+		month = parseInt(month) + 1;
+		var day = dijit.byId(field + "Day").value;
+		var hour = dijit.byId(field + "Hour").value;
+		var minute = dijit.byId(field + "Minute").value;
+		var second = dijit.byId(field + "Second").value;
+				
+		var date = year + "-" + month + "-" + day + " " + hour + ":" + minute + ":" + second;
+		document.getElementById(field).value= date;
+	}
+	
+	function updateDateOnly(field)
+	{
+		eval("var year  = document.forms[0]." + field + "Year.value");
+		eval("var month = document.forms[0]." + field + "Month.value");
+		month = parseInt(month) + 1;
+		eval("var day = document.forms[0]." + field + "Day.value");
+		
+		var date = year + "-" + month + "-" + day;
+		eval("document.forms[0]." + field + ".value = date");
+	}
+	
+	function updateFieldFromDate(field)
+	{		
+		eval("var date = document.forms[0]." + field + ".value");
+		var dateAux = date.split(" ")[0];
+		var timeAux = date.split(" ")[1];
 		
 		if(dateAux != null)
 		{
@@ -133,15 +138,15 @@ function setCalendars(fieldName) {
 			 	month = parseInt(trimZero(month)) - 1;
 		  		var day = dateArray[2];
 		  		day = parseInt(trimZero(day));
-	  		  
+			  
 			  	eval("document.forms[0]." + field + "Day.value = day");
 			 	eval("document.forms[0]." + field + "Month.value = month");
 				eval("document.forms[0]." + field + "Year.value = year");	
-	  		}
-	  	}
-	  	
-	  	if(timeAux != null)
-	  	{
+			}
+		}
+		
+		if(timeAux != null)
+		{
 		  	var timeArray = timeAux.split(":");
 		  	if (timeArray.length >= 2)
 		  	{
@@ -149,20 +154,21 @@ function setCalendars(fieldName) {
 		  		hour = parseInt(trimZero(hour));
 			  	var minute = timeArray[1];
 			  	var second = timeArray[2];
-	  		  
+			  
 			  	eval("document.forms[0]." + field + "Hour.value = hour");
 			  	eval("document.forms[0]." + field + "Minute.value = minute");
 			  	eval("document.forms[0]." + field + "Second.value = second");
 		  	}	  	
-	  	}
-	  	amPm(field);
-	  }
-	  
-	  function amPm(fieldName)
-	  {
+		}
+		amPm(field);
+	}
+	
+	function amPm(fieldName)
+	{
 		var ele = document.getElementById(fieldName + "PM");
-		eval("var val = document.forms[0]." + fieldName + "Hour.value");
-
+		//eval("var val = document.forms[0]." + fieldName + "Hour.value");
+		var val = dijit.byId(fieldName + "Hour").value;
+	
 		if(val > 11)
 		{
 			ele.innerHTML = "<font class=\"bg\" size=\"2\">PM</font>";
@@ -180,8 +186,8 @@ function setCalendars(fieldName) {
 function submitfm(form) {
 	if (validate()) {
 		form.<portlet:namespace />cmd.value = '<%=Constants.ADD%>';
-		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/content_importer/edit_jobs" /></portlet:actionURL>';
-		form.<portlet:namespace />redirect.value = '<portlet:renderURL><portlet:param name="struts_action" value="/ext/content_importer/edit_jobs" /></portlet:renderURL>';
+		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/content_importer/edit_job" /></portlet:actionURL>';
+		form.<portlet:namespace />redirect.value = '<portlet:renderURL><portlet:param name="struts_action" value="/ext/content_importer/edit_job" /></portlet:renderURL>';
 		form.referrer.value = '<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/content_importer/view_jobs" /><portlet:param name="group" value="<%= ContentImporterQuartzUtils.quartzGroup %>" /></portlet:renderURL>';
 		submitForm(form);
 	}
@@ -194,11 +200,11 @@ function cancelEdit() {
 
 
 function deleteSchedule(form) {
-	if(confirm("Are you sure you want to delete this schedule (this cannot be undone) ?")){
+	if(confirm("<%=LanguageUtil.get(pageContext,"content-importer-delete-job-schedule")%>")){
 		form.<portlet:namespace />cmd.value = '<%=Constants.DELETE%>';
 		form.<portlet:namespace />redirect.value = '<%= referrer %>';
 		form.referrer.value = '<%= referrer %>';
-		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/content_importer/edit_jobs" /></portlet:actionURL>';
+		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/content_importer/edit_job" /></portlet:actionURL>';
 		submitForm(form);
 	}
 }
@@ -212,21 +218,21 @@ function submitParent() {
 	var inode = document.getElementById("htmlinode").value;
 	form = document.getElementById("fm");
 	form.<portlet:namespace />cmd.value = '<%=Constants.EDIT%>';
-	form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/content_importer/edit_jobs" /></portlet:actionURL>';
+	form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/content_importer/edit_job" /></portlet:actionURL>';
 	submitForm(form);
 }
 
 	function validate() {
 
 		if (trimString(document.getElementById("jobName").value) == '') {
-			alert("The Task Description is required");
+			alert("<%=LanguageUtil.get(pageContext,"message.content.importer.description.required")%>");
 			return false;
 		}
 	
 		if (document.getElementById("atInfo").checked) {
 			if (!document.forms[0].at[0].checked &&
 				!document.forms[0].at[1].checked) {
-				alert("At least one AT option must be selected");
+				alert("<%=LanguageUtil.get(pageContext,"message.content.importer.at.required")%>");
 				return false;
 			}
 		}
@@ -234,7 +240,7 @@ function submitParent() {
 		if (document.getElementById("everyInfo").checked) {
 			if (!document.forms[0].every[0].checked &&
 				!document.forms[0].every[1].checked) {
-				alert("At least one EVERY option must be selected");
+				alert("<%=LanguageUtil.get(pageContext,"message.content.importer.every.required")%>");
 				return false;
 			} else if (document.forms[0].every[1].checked) {
 				var selected = false;
@@ -246,7 +252,7 @@ function submitParent() {
 				}
 				
 				if (!selected) {
-					alert("At least one week day must be selected");
+					alert("<%=LanguageUtil.get(pageContext,"message.content.importer.week.day.required")%>");
 					return false;
 				}
 			}
@@ -256,13 +262,17 @@ function submitParent() {
 		if (atInfo.checked) {
 			var at = document.getElementsByName("at");
 			if (at[1].checked) {
-				var betweenFromHourObj = document.getElementsByName("betweenFromHour")[0];
-				var betweenFromHour = betweenFromHourObj[betweenFromHourObj.selectedIndex].value;
-				var betweenToHourObj = document.getElementsByName("betweenToHour")[0];
-				var betweenToHour = betweenToHourObj[betweenToHourObj.selectedIndex].value;
+				//var betweenFromHourObj = document.getElementsByName("betweenFromHour")[0];
+				//var betweenFromHour = betweenFromHourObj[betweenFromHourObj.selectedIndex].value;
+				var betweenFromHour = dijit.byId('betweenFromHour').attr('value'); 
+				
+				//var betweenToHourObj = document.getElementsByName("betweenToHour")[0];
+				//var betweenToHour = betweenToHourObj[betweenToHourObj.selectedIndex].value;
+				var betweenToHour = dijit.byId('betweenToHour').attr('value'); 
+				
 
 				if (parseInt(betweenToHour) < parseInt(betweenFromHour) ) {
-					alert("The 'From Hour' must be lesser than 'To Hour'");
+					alert("<%=LanguageUtil.get(pageContext,"message.content.importer.from.hour.minor.than.to.hour")%>");
 					return false;
 				}
 				
@@ -278,7 +288,7 @@ function submitParent() {
 						 (minutes == 0)) ||
 						((hours == 0) &&
 						 isNaN(minutes))) {
-						alert("Must specify each hours and/or minutes with a value bigger than 0.");
+						alert("<%=LanguageUtil.get(pageContext,"message.content.importer.hours.minutes.values")%>");
 						return false;
 					}
 				}
@@ -289,7 +299,7 @@ function submitParent() {
 		}
 
 		if (trimString(document.getElementById("filePath").value) == '') {
-			alert("The File Path is required");
+			alert("<%=LanguageUtil.get(pageContext,"message.content.importer.file.path.required")%>");
 			return false;
 		}
 
@@ -304,7 +314,7 @@ function submitParent() {
 			}
 			
 			if (isIdentifierKeyField && (trimString(document.getElementById("identifierFieldName").value) == '')) {
-				alert("The Identifier Field Name is required");
+				alert("<%=LanguageUtil.get(pageContext,"message.content.importer.identifier.field.name.required")%>");
 				return false;
 			}
 		}
@@ -312,30 +322,19 @@ function submitParent() {
 		return true;
 	}
 
-	function structureChanged() {
-		var select = document.getElementById("structure");
-		var inode = select.options[select.selectedIndex].value;
+	function structureChanged () {
+		var inode = dijit.byId("structuresSelect").attr('value');
 		StructureAjax.getKeyStructureFields(inode, fillFields);
 	}
 
-	function fillFields(data) {
+	function fillFields (data) {
 		currentStructureFields = data;
-		DWRUtil.removeAllRows("import_fields_table");
-		
-		var identifier = new Array();
-		identifier["fieldName"] = "Identifier";
-		identifier["inode"] = "0";
-		identifier["fieldIndexed"] = true;
-
-		var newData = new Array();
-		newData.push(identifier);
-
-		newData = newData.concat(data);
-		
-		DWRUtil.addRows("import_fields_table", newData, [fieldCheckbox], { escapeHtml: false });	
+		dwr.util.removeAllRows("import_fields_table");
+		dwr.util.addRows("import_fields_table", data, [fieldCheckbox], { escapeHtml: false });
+		dojo.parser.parse('import_fields_table');
 	}
 
-	function fieldCheckbox(field) {
+	function fieldCheckbox (field) {
 		var fieldName = field["fieldName"];
 		var fieldInode = field["inode"];
 		var fieldIndexed = field["fieldIndexed"];
@@ -345,22 +344,27 @@ function submitParent() {
 		}
 		
 		<% 
-			long[] fields = contentImporterForm.getFields();
-			for (int i = 0; i < fields.length; i++) {
+			String[] fields = contentImporterForm.getFields();
+			for (int i = 0; i < fields.length; i++) 
+			{
 
 		%>
-		if ((fieldInode == <%= fields[i] %>) && fieldIndexed)
-			return "<input checked type=\"checkbox\" id=\"" + fieldInode + "Field\" name=\"fields\" value=\"" + fieldInode + "\" " + disableField + " /> " + fieldName;
+		if ((fieldInode == "<%=fields[i]%>") && fieldIndexed) {
+			if (dijit.byId(fieldInode + 'Field'))
+				dijit.byId(fieldInode + 'Field').destroy();
+			return "<div><input checked type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" id=\"" + fieldInode + "Field\" name=\"fields\" value=\"" + fieldInode + "\" "+disableField+" /> "  + fieldName + "</div>";
+		}
 		<%			
 			
 			} 
 		%>
-		return "<input type=\"checkbox\" id=\"" + fieldInode + "Field\" name=\"fields\" value=\"" + fieldInode + "\" " + disableField + " /> " + fieldName;
+		if (dijit.byId(fieldInode + 'Field'))
+			dijit.byId(fieldInode + 'Field').destroy()
+		return "<div style='margin:2px 0px;'><input type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" id=\"" + fieldInode + "Field\" name=\"fields\" value=\"" + fieldInode + "\" "+disableField+" /> <label>" +  fieldName + "</label></div>";
 	}
 
 	function languageChanged() {
-		var select = document.getElementById("languageSelect");
-		var languageId = select.options[select.selectedIndex].value;
+		var languageId = dijit.byId("languageSelect").attr('value');
 		if (-1 < languageId) {
 				document.getElementById("multiLingualImportNotes").style.display="none";
 		} else {
@@ -369,806 +373,596 @@ function submitParent() {
 	}
 </script>
 
-<html:form action="/ext/content_importer/edit_jobs" styleId="fm">
+<html:form action="/ext/content_importer/edit_job" styleId="fm">
 
-<table border="0" width="100%" cellpadding="0" cellspacing="0">
-	<tr>
-		<td><img border="0" height="8" hspace="0" src="/html/skin/image/common/spacer.gif" vspace="0" width="1"></td>
-	</tr>
-</table>
+<input name="<portlet:namespace /><%= Constants.CMD %>" type="hidden" value="">
+<input name="<portlet:namespace />redirect" type="hidden" value="">
+<input name="referrer" type="hidden" value="">
+<input type="hidden" name="jobGroup" id="jobGroup" value="<%= ContentImporterQuartzUtils.quartzGroup %>">
+<html:hidden property="editMode" />
 
-	<table border="0" cellpadding="2" cellspacing="2" id="main">
-		<tr>
-			<td>
-				<table border="0" cellpadding="2" cellspacing="2">
-				<input name="<portlet:namespace /><%= Constants.CMD %>" type="hidden" value="">
-				<input name="<portlet:namespace />redirect" type="hidden" value="">
-				<input name="referrer" type="hidden" value="">
-				<input type="hidden" name="jobGroup" id="jobGroup" value="<%= ContentImporterQuartzUtils.quartzGroup %>">
-				<html:hidden property="editMode" />
+<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false" >
+	<!-- Basic Properties -->    
+	<div id="fileBasicTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Basic-Properties") %>">
+		<dl>
+			<dt><%=LanguageUtil.get(pageContext,"content-importer-task-name")%>: </dt>
+			<dd><input class="form-text" dojoType="dijit.form.TextBox" name="jobName" id="jobName" value="<%= UtilMethods.isSet(contentImporterForm.getJobName()) ? contentImporterForm.getJobName() : "" %>" style="width: 300px;" type="text" ></dd>
+			<dt><%=LanguageUtil.get(pageContext,"content-importer-task-description")%>:</dt>
+			<dd><input class="form-text" dojoType="dijit.form.TextBox" name="jobDescription" id="jobDescription" value="<%= UtilMethods.isSet(contentImporterForm.getJobDescription()) ? contentImporterForm.getJobDescription() : "" %>"  style="width: 300px;" type="text" ></dd>
+			<dt><%=LanguageUtil.get(pageContext,"Execute")%>:</dt>
+			<dd>
+				<%
+					SimpleDateFormat sdf = new SimpleDateFormat(com.dotmarketing.util.WebKeys.DateFormats.DOTSCHEDULER_DATE);
 				
-				<tr>
-					<td>
-						<font class="bg" size="2"><b>Task Name:</b></font>
-					</td>				
-					<td>
-						<html:text styleClass="form-text" size="40" property="jobName" styleId="jobName" />
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<font class="bg" size="2"><b>Task Description:</b></font>
-					</td>				
-					<td>
-						<html:text styleClass="form-text" size="40" property="jobDescription" />
-					</td>
-				</tr>
-				<tr>
-					<td valign="top" rowspan="2">
-						<font class="bg" size="2"><b>Execute:</b></font>
-					</td>				
-					<td>
-						<table cellpadding="0" cellspacing="0">
-<%
-	SimpleDateFormat sdf = new SimpleDateFormat(com.dotmarketing.util.WebKeys.DateFormats.DOTSCHEDULER_DATE);
-
-	int[] monthIds = CalendarUtil.getMonthIds();
-	String[] months = CalendarUtil.getMonths(locale);
-
-	int currentYear = GregorianCalendar.getInstance().get(Calendar.YEAR);
-	int previous = 100;
-%>
-							<tr>
-							    <td>
-							    	From
-							    </td>
-								<td>
-<%
-	Calendar startDateCalendar = null;
-	Date startDate;
-	try {
-		startDate = sdf.parse(contentImporterForm.getStartDate());
-	} catch (Exception e) {
-		try {
-			SimpleDateFormat sdf2 = new SimpleDateFormat(com.dotmarketing.util.WebKeys.DateFormats.DOTSCHEDULER_DATE2);
-			startDate = sdf2.parse(contentImporterForm.getStartDate());
-		} catch (Exception ex) {
-			startDate = new Date();
-		}
-	}
-
-	if (contentImporterForm.isHaveStartDate() ||
-		!UtilMethods.isSet(contentImporterForm.getJobGroup()) ||
-		(UtilMethods.isSet(contentImporterForm.getJobGroup()) &&
-		 !contentImporterForm.isHaveStartDate())) {
-		startDateCalendar = GregorianCalendar.getInstance();
-		startDateCalendar.setTime(startDate);
-	}
-%>
-									<html:checkbox property="haveStartDate" onclick="checkDate(this, 'startDate')" styleId="haveStartDate" />
-								</td>
-								<td>
-									<div id="startDateDiv">
-									<table>
-										<tr>
-											<td>
-												<select name="startDateMonth" onChange="updateDate('startDate');">
-<%
-	int startDateMonth = -1;
-
-	if (startDateCalendar != null)
-		startDateMonth = startDateCalendar.get(Calendar.MONTH);
-
-	for (int i = 0; i < months.length; i++) {
-%>
-													<option <%= startDateMonth == monthIds[i] ? "selected" : "" %> value="<%= monthIds[i] %>"><%= months[i] %></option>
-<%
-	}
-%>
-												</select>
-											</td>
-											<td>
-												<select name="startDateDay" onChange="updateDate('startDate');">
-<%
-	int startDateDay = -1;
-
-	if (startDateCalendar != null)
-		startDateDay = startDateCalendar.get(Calendar.DAY_OF_MONTH);
-
-	for (int i = 1; i <= 31; i++) {
-%>
-													<option <%= startDateDay == i ? "selected" : "" %> value="<%= i %>"><%= i %></option>
-<%
-	}
-%>
-												</select>
-											</td>
-											<td>
-												<select name="startDateYear" onChange="updateDate('startDate');">
-<%
-	int startDateYear = -1;
-
-	if (startDateCalendar != null)
-		startDateYear = startDateCalendar.get(Calendar.YEAR);
-
-	for (int i = currentYear - previous; i <= currentYear + 10; i++) {
-%>
-													<option <%= startDateYear == i ? "selected" : "" %> value="<%= i %>"><%= i %></option>
-<%
-	}
-%>
-												</select>
-											</td>
-											<td>
-												<img align="absmiddle" border="0" hspace="0" id="<portlet:namespace />calendar_input_0_button" src="<%= COMMON_IMG %>/calendar/calendar.gif" vspace="0" onClick="<portlet:namespace />calendarOnClick_0();">
-											</td>
-											<td nowrap="nowrap">
-												<select name="startDateHour" onChange="amPm('startDate');updateDate('startDate');">
-<%
-	int startDateHour = -1;
-
-	if (startDateCalendar != null)
-		startDateHour = startDateCalendar.get(Calendar.HOUR_OF_DAY);
-
-	for (int i = 0; i < 24; i++) 
-	{
-		int val = i > 12 ?  i - 12: i;
-		if (val == 0)
-			val = 12;
-%>
-													<option <%= startDateHour == i ? "selected" : "" %> value="<%= i %>"><%= val %></option>
-<%
-	}
-%>
-												</select> :
-											</td>
-											<td nowrap="nowrap">
-												<select name="startDateMinute" onChange="updateDate('startDate');">
-<%
-	int startDateMinute = -1;
-
-	if (startDateCalendar != null)
-		startDateMinute = startDateCalendar.get(Calendar.MINUTE);
-
-	for (int i = 0; i < 60; ++i) {
-		String val = (i < 10) ? "0" + i: String.valueOf(i);
-%>
-													<option <%= startDateMinute == i ? "selected" : "" %> value="<%= val %>"><%= val %></option>
-<%
-	}
-%>
-												</select> :
-											</td>
-											<td nowrap="nowrap">
-												<select name="startDateSecond" onChange="updateDate('startDate');">
-<%
-	int startDateSecond = -1;
-
-	if (startDateCalendar != null)
-		startDateSecond = startDateCalendar.get(Calendar.SECOND);
-
-	for (int i = 0; i < 60; ++i) {
-		String val = (i < 10) ? "0" + i: String.valueOf(i);
-%>
-													<option <%= startDateSecond == i ? "selected" : "" %> value="<%= val %>"><%= val %></option>
-<%
-	}
-%>
-												</select>
-											</td>
-											<td>
-												<span id="startDatePM"><font class="bg" size="2">AM</font></span>
-											</td>
-											<td>&nbsp;
-												
-											</td>
-										</tr>
-									</table>
-									</div>
-								</td>
-							</tr>
-							<input type="hidden" name="startDate" value="" id="startDate">
-							<script language="javascript">
-<%
-	if (!UtilMethods.isSet(contentImporterForm.getJobGroup())) {
-%>
-								document.getElementById('haveStartDate').checked = true;
-<%
-	}
-%>
-								checkDate(document.forms[0].haveStartDate, 'startDate');
-								amPm('startDate');
-								updateDate('startDate');
-							</script>
-							<tr>
-								<td>
-									To
-								</td>
-								<td>
-<%
-	Calendar endDateCalendar = null;
-	Date endDate;
-	try {
-		endDate = sdf.parse(contentImporterForm.getEndDate());
-	} catch (Exception e) {
-		try {
-			SimpleDateFormat sdf2 = new SimpleDateFormat(com.dotmarketing.util.WebKeys.DateFormats.DOTSCHEDULER_DATE2);
-			endDate = sdf2.parse(contentImporterForm.getEndDate());
-		} catch (Exception ex) {
-			endDate = new Date();
-		}
-	}
-
-	if (contentImporterForm.isHaveEndDate() ||
-		!UtilMethods.isSet(contentImporterForm.getJobGroup()) ||
-		(UtilMethods.isSet(contentImporterForm.getJobGroup()) &&
-		 !contentImporterForm.isHaveEndDate())) {
-		endDateCalendar = GregorianCalendar.getInstance();
-		endDateCalendar.setTime(endDate);
-	}
-%>
-									<html:checkbox property="haveEndDate" onclick="checkDate(this, 'endDate')" styleId="haveEndDate" />
-								</td>
-								<td>
-									<div id="endDateDiv">
-									<table>
-										<tr>
-											<td>
-												<select name="endDateMonth" onChange="updateDate('endDate');">
-<%
-	int endDateMonth = -1;
-
-	if (endDateCalendar != null)
-		endDateMonth = endDateCalendar.get(Calendar.MONTH);
-
-	for (int i = 0; i < months.length; i++) {
-%>
-													<option <%= endDateMonth == monthIds[i] ? "selected" : "" %> value="<%= monthIds[i] %>"><%= months[i] %></option>
-<%
-	}
-%>
-												</select>
-											</td>
-											<td>
-												<select name="endDateDay" onChange="updateDate('endDate');">
-<%
-	int endDateDay = -1;
-
-	if (endDateCalendar != null)
-		endDateDay = endDateCalendar.get(Calendar.DAY_OF_MONTH);
-
-	for (int i = 1; i <= 31; i++) {
-%>
-													<option <%= endDateDay == i ? "selected" : "" %> value="<%= i %>"><%= i %></option>
-<%
-	}
-%>
-												</select>
-											</td>
-											<td>
-												<select name="endDateYear" onChange="updateDate('endDate');">
-<%
-	int endDateYear = -1;
-
-	if (endDateCalendar != null)
-		endDateYear = endDateCalendar.get(Calendar.YEAR);
-
-	for (int i = currentYear - previous; i <= currentYear + 10; i++) {
-%>
-													<option <%= endDateYear == i ? "selected" : "" %> value="<%= i %>"><%= i %></option>
-<%
-	}
-%>
-												</select>
-											</td>
-											<td>
-												<img align="absmiddle" border="0" hspace="0" id="<portlet:namespace />calendar_input_1_button" src="<%= COMMON_IMG %>/calendar/calendar.gif" vspace="0" onClick="<portlet:namespace />calendarOnClick_1();">
-											</td>
-											<td nowrap="nowrap">
-												<select name="endDateHour" onChange="amPm('endDate');updateDate('endDate');">
-<%
-	int endDateHour = -1;
-
-	if (endDateCalendar != null)
-		endDateHour = endDateCalendar.get(Calendar.HOUR_OF_DAY);
-
-	for (int i = 0; i < 24; i++) 
-	{
-		int val = i > 12 ?  i - 12: i;
-		if (val == 0)
-			val = 12;
-%>
-													<option <%= endDateHour == i ? "selected" : "" %> value="<%= i %>"><%= val %></option>
-<%
-	}
-%>
-												</select> :
-											</td>
-											<td nowrap="nowrap">
-												<select name="endDateMinute" onChange="updateDate('endDate');">
-<%
-	int endDateMinute = -1;
-
-	if (endDateCalendar != null)
-		endDateMinute = endDateCalendar.get(Calendar.MINUTE);
-
-	for (int i = 0; i < 60; ++i) {
-		String val = (i < 10) ? "0" + i: String.valueOf(i);
-%>
-													<option <%= endDateMinute == i ? "selected" : "" %> value="<%= val %>"><%= val %></option>
-<%
-	}
-%>
-												</select> :
-											</td>
-											<td nowrap="nowrap">
-												<select name="endDateSecond" onChange="updateDate('endDate');">
-<%
-	int endDateSecond = -1;
-
-	if (endDateCalendar != null)
-		endDateSecond = endDateCalendar.get(Calendar.SECOND);
-
-	for (int i = 0; i < 60; ++i) {
-		String val = (i < 10) ? "0" + i: String.valueOf(i);
-%>
-													<option <%= endDateSecond == i ? "selected" : "" %> value="<%= val %>"><%= val %></option>
-<%
-	}
-%>
-												</select>
-											</td>
-											<td>
-												<span id="endDatePM"><font class="bg" size="2">AM</font></span>
-											</td>
-											<td>&nbsp;
-												
-											</td>
-										</tr>
-									</table>
-									</div>
-								</td>
-							</tr>
-							<input type="hidden" name="endDate" value="" id="endDate">
-							<script language="javascript">
-<%
-	if (!UtilMethods.isSet(contentImporterForm.getJobGroup())) {
-%>
-								document.getElementById('haveEndDate').checked = true;
-<%
-	}
-%>
-								checkDate(document.forms[0].haveEndDate, 'endDate');
-								amPm('endDate');
-								updateDate('endDate');
-							</script>
-						</table>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<table cellpadding="0" cellspacing="0">
-							<tr>
-								<!--td-->
-								<td colspan="3">
-<%
-	contentImporterForm.setAtInfo(true);
-%>
-									<div style="display: none;">
-										<html:checkbox property="atInfo" styleId="atInfo" />
-									</div>
-								<!--/td>
-								<td colspan="2"-->
-									<font class="bg" size="2">&nbsp;&nbsp;<strong>at</strong></font>								
-                                    </td>
-							</tr>
-							<tr>
-								<td>&nbsp;
-									
-								</td>
-								<td>
-									<table>
-										<tr>
-											<td>
-												<input type="radio" name="at" id="at" value="isTime" <%= UtilMethods.isSet(contentImporterForm.getAt()) && contentImporterForm.getAt().equals("isTime") ? "checked" : "" %> >
-											</td>
-										</tr>
-									</table>
-								</td>
-								<td>
-									<table>
-										<tr>
-											<td>
-												<select name="atTimeHour" onChange="amPm('atTime');">
-<%
-	for (int i = 0; i < 24; i++) 
-	{
-		int val = i > 12 ?  i - 12: i;
-		if (val == 0)
-			val = 12;
-%>
-													<option <%= contentImporterForm.getAtTimeHour() == i ? "selected" : "" %> value="<%= i %>"><%= val %></option>
-<%
-	}
-%>
-												</select> :
-											</td>
-											<td>
-												<select name="atTimeMinute">
-<%
-	for (int i = 0; i < 60; ++i) {
-		String val = (i < 10) ? "0" + i: String.valueOf(i);
-%>
-													<option <%= contentImporterForm.getAtTimeMinute() == i ? "selected" : "" %> value="<%= i %>"><%= val %></option>
-<%
-	}
-%>
-												</select> :
-											</td>
-											<td>
-												<select name="atTimeSecond">
-<%
-	for (int i = 0; i < 60; ++i) {
-		String val = (i < 10) ? "0" + i: String.valueOf(i);
-%>
-													<option <%= contentImporterForm.getAtTimeSecond() == i ? "selected" : "" %> value="<%= i %>"><%= val %></option>
-<%
-	}
-%>
-												</select>
-											</td>
-											<td>
-												<span id="atTimePM"><font class="bg" size="2">AM</font></span>
-											</td>
-										</tr>
-									</table>
-									<script language="javascript">
-										amPm('atTime');
-									</script>
-								</td>
-							</tr>
-							<tr>
-								<td>&nbsp;
-									
-								</td>
-								<td>
-									<table>
-										<tr>
-											<td>
-												<input type="radio" name="at" id="at" value="isBetween" <%= UtilMethods.isSet(contentImporterForm.getAt()) && contentImporterForm.getAt().equals("isBetween") ? "checked" : "" %> >
-											</td>
-										</tr>
-									</table>
-								</td>
-								<td>
-									<table>
-										<tr>
-											<td>
-												<font class="bg" size="2">between</font>
-											</td>
-											<td>
-												<select name="betweenFromHour" onChange="amPm('betweenFrom');">
-<%
-	for (int i = 0; i < 24; i++) 
-	{
-		int val = i > 12 ?  i - 12: i;
-		if (val == 0)
-			val = 12;
-%>
-													<option <%= contentImporterForm.getBetweenFromHour() == i ? "selected" : "" %> value="<%= i %>"><%= val %></option>
-<%
-	}
-%>
-												</select>
-											</td>
-											<td>
-												<span id="betweenFromPM"><font class="bg" size="2">AM</font></span>
-												<script language="javascript">
-													amPm('betweenFrom');
-												</script>
-											</td>
-											<td>&nbsp;</td>
-											<td>
-												<select name="betweenToHour" onChange="amPm('betweenTo');">
-<%
-	for (int i = 0; i < 24; i++) 
-	{
-		int val = i > 12 ?  i - 12: i;
-		if (val == 0)
-			val = 12;
-%>
-													<option <%= contentImporterForm.getBetweenToHour() == i ? "selected" : "" %> value="<%= i %>"><%= val %></option>
-<%
-	}
-%>
-												</select>
-											</td>
-											<td>
-												<span id="betweenToPM"><font class="bg" size="2">AM</font></span>
-												<script language="javascript">
-													amPm('betweenTo');
-												</script>
-											</td>
-										</tr>
-									</table>
-								</td>
-							</tr>
-							<tr>
-								<td>
-<%
-	contentImporterForm.setEachInfo(true);
-%>
-									<div style="display: none;">
-										<html:checkbox property="eachInfo" styleId="eachInfo" />
-									</div>
-								</td>
-								<td>&nbsp;
-									
-								</td>
-								<td>
-									<table>
-										<tr>
-											<td>
-												<font class="bg" size="2">each <input type="text" class="form-text" name="eachHours" id="eachHours" maxlength="3" size="3" <%= 0 < contentImporterForm.getEachHours() ? "value=\"" + contentImporterForm.getEachHours() + "\"" : "" %> > hours and <input type="text" class="form-text" name="eachMinutes" id="eachMinutes" maxlength="3" size="3" <%= 0 < contentImporterForm.getEachMinutes() ? "value=\"" + contentImporterForm.getEachMinutes() + "\"" : "" %> > minutes</font>
-											</td>
-										</tr>
-									</table>
-								</td>
-							</tr>
-<%
-		if (!contentImporterForm.isEveryInfo())
-			contentImporterForm.setEvery("");
-%>
-							<tr>
-								<td>
-									<html:checkbox property="everyInfo" styleId="everyInfo" />
-								</td>
-								<td colspan="2">
-									<font class="bg" size="2">every</font>
-								</td>
-							</tr>
-							<tr>
-								<td>&nbsp;
-									
-								</td>
-								<td>
-									<table>
-										<tr>
-											<td>
-												<input type="radio" name="every" id="every" value="isDate" <%= UtilMethods.isSet(contentImporterForm.getEvery()) && contentImporterForm.getEvery().equals("isDate") ? "checked" : "" %> >
-											</td>
-										</tr>
-									</table>
-								</td>
-								<td>
-									<table>
-										<tr>
-											<td>
-												<select name="everyDateMonth" onChange="updateDateOnly('everyDate');">
-													<option value="*">-</option>
-<%
-	for (int i = 0; i < months.length; i++) {
-%>
-													<option <%= (contentImporterForm.getEveryDateMonth()-1) == monthIds[i] ? "selected" : "" %> value="<%= monthIds[i] %>"><%= months[i] %></option>
-<%
-	}
-%>
-												</select>
-											</td>
-											<td>
-												<select name="everyDateDay" onChange="updateDateOnly('everyDate');">
-													<option value="*">-</option>
-<%
-	for (int i = 1; i <= 31; i++) {
-%>
-													<option <%= contentImporterForm.getEveryDateDay() == i ? "selected" : "" %> value="<%= i %>"><%= i %></option>
-<%
-	}
-%>
-												</select>
-											</td>
-											<td>
-												<select name="everyDateYear" onChange="updateDateOnly('everyDate');">
-													<option value="*">-</option>
-<%
-	for (int i = currentYear - previous; i <= currentYear + 10; i++) {
-%>
-													<option <%= contentImporterForm.getEveryDateYear() == i ? "selected" : "" %> value="<%= i %>"><%= i %></option>
-<%
-	}
-%>
-												</select>
-											</td>
-											<td>
-												<img align="absmiddle" border="0" hspace="0" id="<portlet:namespace />calendar_input_2_button" src="<%= COMMON_IMG %>/calendar/calendar.gif" vspace="0" onClick="<portlet:namespace />calendarOnClick_2();">
-											</td>
-										</tr>
-									</table>
-									<input type="hidden" name="everyDate" value="" id="everyDate">
-									<script language="javascript">
-										updateDateOnly('everyDate');
-									</script>
-								</td>
-							</tr>
-							<tr>
-								<td>&nbsp;
-									
-								</td>
-								<td valign="top">
-									<table>
-										<tr>
-											<td>
-												<input type="radio" name="every" id="every" value="isDays" <%= UtilMethods.isSet(contentImporterForm.getEvery()) && contentImporterForm.getEvery().equals("isDays") ? "checked" : "" %> >
-											</td>
-										</tr>
-									</table>
-								</td>
-								<td>
-									<table>
-										<tr>
-											<td>
-												Mon
-											</td>
-											<td>
-												Tue
-											</td>
-											<td>
-												Wed
-											</td>
-											<td>
-												Thu
-											</td>
-											<td>
-												Fri
-											</td>
-											<td>
-												Sat
-											</td>
-											<td>
-												Sun
-											</td>
-										</tr>
-										<tr>
-											<td>
-												<input type="checkbox" name="everyDay" id="everyDay" value="MON" <%= contentImporterForm.isMonday() ? "checked" : "" %> >
-											</td>
-											<td>
-												<input type="checkbox" name="everyDay" id="everyDay" value="TUE" <%= contentImporterForm.isTuesday() ? "checked" : "" %> >
-											</td>
-											<td>
-												<input type="checkbox" name="everyDay" id="everyDay" value="WED" <%= contentImporterForm.isWednesday() ? "checked" : "" %> >
-											</td>
-											<td>
-												<input type="checkbox" name="everyDay" id="everyDay" value="THU" <%= contentImporterForm.isThusday() ? "checked" : "" %> >
-											</td>
-											<td>
-												<input type="checkbox" name="everyDay" id="everyDay" value="FRI" <%= contentImporterForm.isFriday() ? "checked" : "" %> >
-											</td>
-											<td>
-												<input type="checkbox" name="everyDay" id="everyDay" value="SAT" <%= contentImporterForm.isSaturday() ? "checked" : "" %> >
-											</td>
-											<td>
-												<input type="checkbox" name="everyDay" id="everyDay" value="SUN" <%= contentImporterForm.isSunday() ? "checked" : "" %> >
-											</td>
-										</tr>
-									</table>
-								</td>
-							</tr>
-						</table>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<font class="bg" size="2"><b>Structure to Import:</b></font>
-					</td>				
-					<td>
-						<html:select property="structure" styleId="structure" onchange="structureChanged()">
-							<html:options collection="structures" property="inode" labelProperty="name" />
-						</html:select>
-					</td>
-				</tr>
-				<tr>
-				<td width="30%" style="vertical-align: top">
-					<font class="bg" size="2"><b>Language of the Contents to Import:</b></font>
-				</td>
-				<td>
-					<html:select property="language" styleId="languageSelect" onchange="languageChanged()">
-						<html:options collection="languages" property="id" labelProperty="description" />
-					</html:select>
-					<div id="multiLingualImportNotes" style="display: none">
-						<font class="bg" size="1">
-							<b>Note:</b>
-						<p>
-							In order to import correctly a multilingual file:
-							<ol>
-								<li>The CSV file must saved using "UTF-8" enconding</li>
-								<li>There CSV file must have two extra fields: "languageCode" and "countryCode"</li>
-								<li>A key field must be selected</li>
-							</ol>
-						</p>
-						</font>
-					</div>
-				</td>
-			</tr>
-				<tr>
-					<td width="30%" valign="top">
-						<font class="bg" size="2"><b>Key Fields:</b></font>
-					</td>
-					<td>
-						<table>
-							<tbody id="import_fields_table"> </tbody>
-						</table>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<font class="bg" size="2"><b>File Path:</b></font>
-					</td>				
-					<td>
-						<html:text styleClass="form-text" property="filePath" styleId="filePath" size="75" />
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<font class="bg" size="2"><b>Report Email:</b></font>
-					</td>				
-					<td>
-						<html:text styleClass="form-text" property="reportEmail" size="75" />
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<font class="bg" size="2"><b>CSV Separator Delimiter:</b></font>
-					</td>				
-					<td>
-						<html:text styleClass="form-text" maxlength="1" property="csvSeparatorDelimiter" size="3" />
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<font class="bg" size="2"><b>CSV Text Delimiter:</b></font>
-					</td>				
-					<td>
-						<html:text styleClass="form-text" maxlength="1" property="csvTextDelimiter" size="3" />
-					</td>
-				</tr>								
-				<tr>
-					<td>
-						<font class="bg" size="2"><b>Publish content:</b></font>
-					</td>				
-					<td>
-						<html:checkbox styleClass="form-text" property="publishContent" value="true" />
-					</td>
-				</tr>
+					int[] monthIds = CalendarUtil.getMonthIds();
+					String[] months = CalendarUtil.getMonths(locale);
+				
+					int currentYear = GregorianCalendar.getInstance().get(Calendar.YEAR);
+					int previous = 100;
+				%>
+				<div id="startDateDiv">
+					<span><%=LanguageUtil.get(pageContext,"from")%>:</span>
+					<%
+						Calendar startDateCalendar = null;
+						Date startDate;
+						try {
+							startDate = sdf.parse(contentImporterForm.getStartDate());
+						} catch (Exception e) {
+							try {
+								SimpleDateFormat sdf2 = new SimpleDateFormat(com.dotmarketing.util.WebKeys.DateFormats.DOTSCHEDULER_DATE2);
+								startDate = sdf2.parse(contentImporterForm.getStartDate());
+							} catch (Exception ex) {
+								startDate = new Date();
+							}
+						}
+					
+						if (contentImporterForm.isHaveStartDate() ||
+							!UtilMethods.isSet(contentImporterForm.getJobGroup()) ||
+							(UtilMethods.isSet(contentImporterForm.getJobGroup()) &&
+							 !contentImporterForm.isHaveStartDate())) {
+							startDateCalendar = GregorianCalendar.getInstance();
+							startDateCalendar.setTime(startDate);
+						}
+					%>
+					<input type="checkbox" dojoType="dijit.form.CheckBox" checked id="haveStartDate" name="haveStartDate" onclick="checkDate(this, 'startDate')"/>
+					<select dojoType="dijit.form.FilteringSelect" style="width: 120px;" name="startDateMonth" id="startDateMonth" onChange="updateDate('startDate');">
+						<%
+							int startDateMonth = -1;
+						
+							if (startDateCalendar != null)
+								startDateMonth = startDateCalendar.get(Calendar.MONTH);
+						
+							for (int i = 0; i < months.length; i++) {
+						%>
+							<option <%= startDateMonth == monthIds[i] ? "selected" : "" %> value="<%= monthIds[i] %>"><%= months[i] %></option>
+						<%
+							}
+						%>
+					</select>
+					<select dojoType="dijit.form.FilteringSelect" style="width: 80px;" style="width: 80px;" name="startDateDay" id="startDateDay" onChange="updateDate('startDate');">
+						<%
+							int startDateDay = -1;
+						
+							if (startDateCalendar != null)
+								startDateDay = startDateCalendar.get(Calendar.DAY_OF_MONTH);
+						
+							for (int i = 1; i <= 31; i++) {
+						%>
+							<option <%= startDateDay == i ? "selected" : "" %> value="<%= i %>"><%= i %></option>
+						<%
+							}
+						%>
+					</select>
+					<select dojoType="dijit.form.FilteringSelect" style="width: 80px;" style="width: 80px;" name="startDateYear" id="startDateYear" onChange="updateDate('startDate');">
+						<%
+							int startDateYear = -1;
+						
+							if (startDateCalendar != null)
+								startDateYear = startDateCalendar.get(Calendar.YEAR);
+						
+							for (int i = currentYear - previous; i <= currentYear + 10; i++) {
+						%>
+							<option <%= startDateYear == i ? "selected" : "" %> value="<%= i %>"><%= i %></option>
+						<%
+							}
+						%>
+					</select>
+					<img align="absmiddle" border="0" hspace="0" id="<portlet:namespace />calendar_input_0_button" src="/html/images/icons/calendar-month.png" vspace="0" onClick="<portlet:namespace />calendarOnClick_0();">
+		
+					<select dojoType="dijit.form.FilteringSelect" style="width: 80px;" name="startDateHour" id="startDateHour" onChange="amPm('startDate');updateDate('startDate');">
+						<%
+							int startDateHour = -1;
+						
+							if (startDateCalendar != null)
+								startDateHour = startDateCalendar.get(Calendar.HOUR_OF_DAY);
+						
+							for (int i = 0; i < 24; i++) 
+							{
+								int val = i > 12 ?  i - 12: i;
+								if (val == 0)
+									val = 12;
+						%>
+							<option <%= startDateHour == i ? "selected" : "" %> value="<%= i %>"><%= val %></option>
+						<%
+							}
+						%>
+					</select> :
+					<select dojoType="dijit.form.FilteringSelect" style="width: 80px;" name="startDateMinute" id="startDateMinute" onChange="updateDate('startDate');">
+						<%
+							int startDateMinute = -1;
+						
+							if (startDateCalendar != null)
+								startDateMinute = startDateCalendar.get(Calendar.MINUTE);
+						
+							for (int i = 0; i < 60; ++i) {
+								String val = (i < 10) ? "0" + i: String.valueOf(i);
+						%>
+							<option <%= startDateMinute == i ? "selected" : "" %> value="<%= val %>"><%= val %></option>
+						<%
+							}
+						%>
+					</select> : 
+					<select dojoType="dijit.form.FilteringSelect" style="width: 80px;" name="startDateSecond" id="startDateSecond" onChange="updateDate('startDate');">
+						<%
+							int startDateSecond = -1;
+						
+							if (startDateCalendar != null)
+								startDateSecond = startDateCalendar.get(Calendar.SECOND);
+						
+							for (int i = 0; i < 60; ++i) {
+								String val = (i < 10) ? "0" + i: String.valueOf(i);
+						%>
+							<option <%= startDateSecond == i ? "selected" : "" %> value="<%= val %>"><%= val %></option>
+						<%
+							}
+						%>
+					</select>
+					<span id="startDatePM"><font class="bg" size="2">AM</font></span>
+					<input type="hidden" name="startDate" value="" id="startDate">
+					<script language="javascript">
+						<%
+							//if (!UtilMethods.isSet(contentImporterForm.getJobGroup())) {
+						%>
+							//document.getElementById('haveStartDate').checked = true;
+						<%
+							//}
+						%>
+						//checkDate(document.forms[0].haveStartDate, 'startDate');
+						//amPm('startDate');
+						//updateDate('startDate');
+					</script>
+		
+					
+				</div>		
+				
+			</dd>
+			<dd>
+				<div id="endDateDiv">
+					<%
+						Calendar endDateCalendar = null;
+						Date endDate;
+						try {
+							endDate = sdf.parse(contentImporterForm.getEndDate());
+						} catch (Exception e) {
+							try {
+								SimpleDateFormat sdf2 = new SimpleDateFormat(com.dotmarketing.util.WebKeys.DateFormats.DOTSCHEDULER_DATE2);
+								endDate = sdf2.parse(contentImporterForm.getEndDate());
+							} catch (Exception ex) {
+								endDate = new Date();
+							}
+						}
+					
+						if (contentImporterForm.isHaveEndDate() ||
+							!UtilMethods.isSet(contentImporterForm.getJobGroup()) ||
+							(UtilMethods.isSet(contentImporterForm.getJobGroup()) &&
+							 !contentImporterForm.isHaveEndDate())) {
+							endDateCalendar = GregorianCalendar.getInstance();
+							endDateCalendar.setTime(endDate);
+						}
+					%>
+					<span><%=LanguageUtil.get(pageContext,"from")%>:</span>
+					<input type="checkbox" dojoType="dijit.form.CheckBox" checked id="haveEndDate" name="haveEndDate" onclick="checkDate(this, 'endDate')"/>
+					<select dojoType="dijit.form.FilteringSelect" style="width: 120px;" name="endDateMonth" id="endDateMonth" onChange="updateDate('endDate');">
+						<%
+							int endDateMonth = -1;
+						
+							if (endDateCalendar != null)
+								endDateMonth = endDateCalendar.get(Calendar.MONTH);
+						
+							for (int i = 0; i < months.length; i++) {
+						%>
+							<option <%= endDateMonth == monthIds[i] ? "selected" : "" %> value="<%= monthIds[i] %>"><%= months[i] %></option>
+						<%
+							}
+						%>
+					</select>
+					<select dojoType="dijit.form.FilteringSelect" style="width: 80px;" name="endDateDay" id="endDateDay" onChange="updateDate('endDate');">
+						<%
+							int endDateDay = -1;
+						
+							if (endDateCalendar != null)
+								endDateDay = endDateCalendar.get(Calendar.DAY_OF_MONTH);
+						
+							for (int i = 1; i <= 31; i++) {
+						%>
+							<option <%= endDateDay == i ? "selected" : "" %> value="<%= i %>"><%= i %></option>
+						<%
+							}
+						%>
+					</select>
+					<select dojoType="dijit.form.FilteringSelect" style="width: 80px;" name="endDateYear" id="endDateYear" onChange="updateDate('endDate');">
+						<%
+							int endDateYear = -1;
+						
+							if (endDateCalendar != null)
+								endDateYear = endDateCalendar.get(Calendar.YEAR);
+						
+							for (int i = currentYear - previous; i <= currentYear + 10; i++) {
+						%>
+							<option <%= endDateYear == i ? "selected" : "" %> value="<%= i %>"><%= i %></option>
+						<%
+							}
+						%>
+					</select>
+					<img align="absmiddle" border="0" hspace="0" id="<portlet:namespace />calendar_input_1_button" src="/html/images/icons/calendar-month.png" vspace="0" onClick="<portlet:namespace />calendarOnClick_1();">
+					<select dojoType="dijit.form.FilteringSelect" style="width: 80px;" name="endDateHour" id="endDateHour" onChange="amPm('endDate');updateDate('endDate');">
+						<%
+							int endDateHour = -1;
+						
+							if (endDateCalendar != null)
+								endDateHour = endDateCalendar.get(Calendar.HOUR_OF_DAY);
+						
+							for (int i = 0; i < 24; i++) 
+							{
+								int val = i > 12 ?  i - 12: i;
+								if (val == 0)
+									val = 12;
+						%>
+							<option <%= endDateHour == i ? "selected" : "" %> value="<%= i %>"><%= val %></option>
+						<%
+							}
+						%>
+					</select> :
+					<select dojoType="dijit.form.FilteringSelect" style="width: 80px;" name="endDateMinute" id="endDateMinute" onChange="updateDate('endDate');">
+						<%
+							int endDateMinute = -1;
+						
+							if (endDateCalendar != null)
+								endDateMinute = endDateCalendar.get(Calendar.MINUTE);
+						
+							for (int i = 0; i < 60; ++i) {
+								String val = (i < 10) ? "0" + i: String.valueOf(i);
+						%>
+							<option <%= endDateMinute == i ? "selected" : "" %> value="<%= val %>"><%= val %></option>
+						<%
+							}
+						%>
+					</select> :
+					<select dojoType="dijit.form.FilteringSelect" style="width: 80px;" name="endDateSecond" id="endDateSecond" onChange="updateDate('endDate');">
+						<%
+							int endDateSecond = -1;
+						
+							if (endDateCalendar != null)
+								endDateSecond = endDateCalendar.get(Calendar.SECOND);
+						
+							for (int i = 0; i < 60; ++i) {
+								String val = (i < 10) ? "0" + i: String.valueOf(i);
+						%>
+							<option <%= endDateSecond == i ? "selected" : "" %> value="<%= val %>"><%= val %></option>
+						<%
+							}
+						%>
+					</select>
+					<span id="endDatePM"><font class="bg" size="2">AM</font></span>			
+				</div>
+		
+				<input type="hidden" name="endDate" value="" id="endDate">
+				<script language="javascript">
+					<%
+						//if (!UtilMethods.isSet(contentImporterForm.getJobGroup())) {
+					%>
+						//document.getElementById('haveEndDate').checked = true;
+					<%
+						//}
+					%>
+					//checkDate(document.forms[0].haveEndDate, 'endDate');
+					//amPm('endDate');
+					//updateDate('endDate');
+				</script>
+				<%
+					contentImporterForm.setAtInfo(true);
+				%>
+				<div style="display: none;">
+					<input type="checkbox" dojoType="dijit.form.CheckBox" id="atInfo" name="atInfo" <%=contentImporterForm.isAtInfo()?"checked":""%> />
+				</div>
+			</dd>
+			<dd>
+				<input type="radio" name="at" id="at1" dojoType="dijit.form.RadioButton" value="isTime" <%= UtilMethods.isSet(contentImporterForm.getAt()) && contentImporterForm.getAt().equals("isTime") ? "checked" : "" %> >
+				<span><%=LanguageUtil.get(pageContext,"at")%></span>
+				<select dojoType="dijit.form.FilteringSelect" style="width: 80px;" name="atTimeHour" id="atTimeHour" onChange="amPm('atTime');">
+					<%
+						for (int i = 0; i < 24; i++) 
+						{
+							int val = i > 12 ?  i - 12: i;
+							if (val == 0)
+								val = 12;
+					%>
+						<option <%= contentImporterForm.getAtTimeHour() == i ? "selected" : "" %> value="<%= i %>"><%= val %></option>
+					<%
+						}
+					%>
+				</select> :
+				<select dojoType="dijit.form.FilteringSelect" style="width: 80px;" name="atTimeMinute">
+					<%
+						for (int i = 0; i < 60; ++i) {
+							String val = (i < 10) ? "0" + i: String.valueOf(i);
+					%>
+						<option <%= contentImporterForm.getAtTimeMinute() == i ? "selected" : "" %> value="<%= i %>"><%= val %></option>
+					<%
+						}
+					%>
+				</select> :
+				<select dojoType="dijit.form.FilteringSelect" style="width: 80px;" name="atTimeSecond">
+					<%
+						for (int i = 0; i < 60; ++i) {
+							String val = (i < 10) ? "0" + i: String.valueOf(i);
+					%>
+						<option <%= contentImporterForm.getAtTimeSecond() == i ? "selected" : "" %> value="<%= i %>"><%= val %></option>
+					<%
+						}
+					%>
+				</select>
+				<span id="atTimePM">AM</span>
+				<script language="javascript">
+					//amPm('atTime');
+				</script>
+			</dd>
+			<dd>	
+				<input type="radio" name="at" id="at" dojoType="dijit.form.RadioButton" value="isBetween" <%= UtilMethods.isSet(contentImporterForm.getAt()) && contentImporterForm.getAt().equals("isBetween") ? "checked" : "" %>/>
+				<span><%=LanguageUtil.get(pageContext,"between")%></span>
+				<select dojoType="dijit.form.FilteringSelect" style="width: 80px;" name="betweenFromHour" id="betweenFromHour" onChange="amPm('betweenFrom');">
+					<%
+						for (int i = 0; i < 24; i++) 
+						{
+							int val = i > 12 ?  i - 12: i;
+							if (val == 0)
+								val = 12;
+					%>
+						<option <%= contentImporterForm.getBetweenFromHour() == i ? "selected" : "" %> value="<%= i %>"><%= val %></option>
+					<%
+						}
+					%>
+				</select>
+				<span id="betweenFromPM"><font class="bg" size="2">AM</font></span>
+				<script language="javascript">
+					//amPm('betweenFrom');
+				</script>
+				<select dojoType="dijit.form.FilteringSelect" style="width: 80px;" name="betweenToHour" id="betweenToHour" onChange="amPm('betweenTo');">
+					<%
+						for (int i = 0; i < 24; i++) 
+						{
+							int val = i > 12 ?  i - 12: i;
+							if (val == 0)
+								val = 12;
+					%>
+						<option <%= contentImporterForm.getBetweenToHour() == i ? "selected" : "" %> value="<%= i %>"><%= val %></option>
+					<%
+						}
+					%>
+				</select>
+				<span id="betweenToPM"><font class="bg" size="2">AM</font></span>
+				<script language="javascript">
+					//amPm('betweenTo');
+				</script>
+				<%
+					contentImporterForm.setEachInfo(true);
+				%>
+				<div style="display: none;">
+					<input type="checkbox" dojoType="dijit.form.CheckBox" id="eachInfo" name="eachInfo" <%=contentImporterForm.isEachInfo()?"checked":""%>/>
+				</div>
+				<span><%= LanguageUtil.get(pageContext, "each") %> <input type="text" dojoType="dijit.form.TextBox" style="width: 30px;"  class="form-text" name="eachHours" id="eachHours" maxlength="3"  <%= 0 < contentImporterForm.getEachHours() ? "value=\"" + contentImporterForm.getEachHours() + "\"" : "" %> > <%= LanguageUtil.get(pageContext, "hours-and") %> <input type="text" class="form-text" dojoType="dijit.form.TextBox" style="width: 30px;"  name="eachMinutes" id="eachMinutes" maxlength="3" <%= 0 < contentImporterForm.getEachMinutes() ? "value=\"" + contentImporterForm.getEachMinutes() + "\"" : "" %> > <%= LanguageUtil.get(pageContext, "minutes") %></span>
+				<%
+					if (!contentImporterForm.isEveryInfo())
+					contentImporterForm.setEvery("");
+				%>
+				<input type="checkbox" dojoType="dijit.form.CheckBox" id="everyInfo" name="everyInfo" <%=contentImporterForm.isEveryInfo()?"checked":"" %>/>
+			</dd>
+			<dd>
+				<input type="radio" name="every" id="every" dojoType="dijit.form.RadioButton" value="isDate" <%= UtilMethods.isSet(contentImporterForm.getEvery()) && contentImporterForm.getEvery().equals("isDate") ? "checked" : "" %> >
+				<span><%=LanguageUtil.get(pageContext,"every").toLowerCase()%></span>
+				<select dojoType="dijit.form.FilteringSelect" style="width: 120px;" name="everyDateMonth" id="everyDateMonth" onChange="updateDateOnly('everyDate');">
+						<option value="*">-</option>
+					<%
+						for (int i = 0; i < months.length; i++) {
+					%>
+						<option <%= (contentImporterForm.getEveryDateMonth()-1) == monthIds[i] ? "selected" : "" %> value="<%= monthIds[i] %>"><%= months[i] %></option>
+					<%
+						}
+					%>
+				</select>
+				<select dojoType="dijit.form.FilteringSelect" style="width: 80px;" name="everyDateDay" id="everyDateDay" onChange="updateDateOnly('everyDate');">
+						<option value="*">-</option>
+					<%
+						for (int i = 1; i <= 31; i++) {
+					%>
+						<option <%= contentImporterForm.getEveryDateDay() == i ? "selected" : "" %> value="<%= i %>"><%= i %></option>
+					<%
+						}
+					%>
+				</select>
+				<select dojoType="dijit.form.FilteringSelect" style="width: 80px;" name="everyDateYear" id="everyDateYear" onChange="updateDateOnly('everyDate');">
+					<option value="*">-</option>
+					<%
+						for (int i = currentYear - previous; i <= currentYear + 10; i++) {
+					%>
+					<option <%= contentImporterForm.getEveryDateYear() == i ? "selected" : "" %> value="<%= i %>"><%= i %></option>
+					<%
+						}
+					%>
+				</select>
+				<img align="absmiddle" border="0" hspace="0" id="<portlet:namespace />calendar_input_2_button" src="/html/images/icons/calendar-month.png" vspace="0" onClick="<portlet:namespace />calendarOnClick_2();">
+				<input type="hidden" name="everyDate" value="" id="everyDate">
+				<script language="javascript">
+					//updateDateOnly('everyDate');
+				</script>
+			</dd>
+			<dd>
+				
+				<table width="200">
+					<tr>
+						<td rowspan="2"><input type="radio" name="every" id="every1" dojoType="dijit.form.RadioButton" value="isDays" <%= UtilMethods.isSet(contentImporterForm.getEvery()) && contentImporterForm.getEvery().equals("isDays") ? "checked" : "" %> ></td>
+						<td align="center">
+							<%=LanguageUtil.get(pageContext,"content-importer-mon")%>
+						</td>
+						<td align="center">
+						<%=LanguageUtil.get(pageContext,"content-importer-tue")%>
+						</td>
+						<td align="center">
+						<%=LanguageUtil.get(pageContext,"content-importer-wed")%>
+						</td>
+						<td align="center">
+						<%=LanguageUtil.get(pageContext,"content-importer-thu")%>
+						</td>
+						<td align="center">
+						<%=LanguageUtil.get(pageContext,"content-importer-fri")%>
+						</td>
+						<td align="center">
+						<%=LanguageUtil.get(pageContext,"content-importer-sat")%>
+						</td>
+						<td align="center">
+						<%=LanguageUtil.get(pageContext,"content-importer-sun")%>
+						</td>
+					</tr>
+					<tr>
+						<td align="center">
+							<input type="checkbox" dojoType="dijit.form.CheckBox" name="everyDay" id="everyDay1" value="MON" <%= contentImporterForm.isMonday() ? "checked" : "" %> >
+						</td>
+						<td align="center">
+							<input type="checkbox" dojoType="dijit.form.CheckBox" name="everyDay" id="everyDay2" value="TUE" <%= contentImporterForm.isTuesday() ? "checked" : "" %> >
+						</td>
+						<td align="center">
+							<input type="checkbox" dojoType="dijit.form.CheckBox" name="everyDay" id="everyDay3" value="WED" <%= contentImporterForm.isWednesday() ? "checked" : "" %> >
+						</td>
+						<td align="center">
+							<input type="checkbox" dojoType="dijit.form.CheckBox" name="everyDay" id="everyDay4" value="THU" <%= contentImporterForm.isThusday() ? "checked" : "" %> >
+						</td>
+						<td align="center">
+							<input type="checkbox" dojoType="dijit.form.CheckBox" name="everyDay" id="everyDay5" value="FRI" <%= contentImporterForm.isFriday() ? "checked" : "" %> >
+						</td>
+						<td align="center">
+							<input type="checkbox" dojoType="dijit.form.CheckBox" name="everyDay" id="everyDay6" value="SAT" <%= contentImporterForm.isSaturday() ? "checked" : "" %> >
+						</td>
+						<td align="center">
+							<input type="checkbox" dojoType="dijit.form.CheckBox" name="everyDay" id="everyDay7" value="SUN" <%= contentImporterForm.isSunday() ? "checked" : "" %> >
+						</td>
+					</tr>
 				</table>
-			</td>
-		</tr>
-		<tr>
-			<td align="center">
-				<br>
-				<br>
-				<table border="0" cellpadding="2" cellspacing="2">
-				<tr>
-					<td align=center colspan="2">
-						<BR>
-						<% if ((contentImporterForm != null) && (!contentImporterForm.isNewForm())) { %>
-						<input type="button" class="form-btn" onClick="deleteSchedule(document.getElementById('fm'))" value="Delete">
-						<% } %>
-						<input type="button" class="form-btn" onClick="cancelEdit()" value="Cancel">
-						<input type="button" class="form-btn" onClick="submitfm(document.getElementById('fm'))" value="Save">
-					</td>
-				</tr>
+			</dd>
+			<dt><%=LanguageUtil.get(pageContext,"Structure-to-Import")%>:</dt>
+			<dd>
+				<select dojoType="dijit.form.FilteringSelect" name="structure" id="structuresSelect" onchange="structureChanged()" value="<%= UtilMethods.isSet(contentImporterForm.getStructure()) ? contentImporterForm.getStructure() : "" %>" >
+					<%
+						for (Structure structure: structures) {
+					%>
+						<option value="<%= structure.getInode() %>"><%= structure.getName() %></option>
+					<%
+						}
+					%>
+				</select>
+			</dd>
+			<dt><%=LanguageUtil.get(pageContext,"Language-of-the-Contents-to-Import")%>:</dt>
+			<dd>
+				<select dojoType="dijit.form.FilteringSelect" name="language" id="languageSelect" onchange="languageChanged()" value="<%= UtilMethods.isSet(contentImporterForm.getLanguage()) ? contentImporterForm.getLanguage() : "" %>" >
+					<%
+									
+						for (HashMap<String, Object> language: languagesMap) {
+					%>
+						<option value="<%= language.get("id") %>"><%= language.get("description") %></option>
+					<%
+						}
+					%>
+				</select>
+				<div id="multiLingualImportNotes" style="display: none">
+					<p><strong><%=LanguageUtil.get(pageContext,"Notes")%>:</strong></p>
+					<p><%=LanguageUtil.get(pageContext,"In-order-to-import-correctly-a-multilingual-file")%>:</ol>
+					<ol>
+						<li><%=LanguageUtil.get(pageContext,"The-CSV-file-must-saved-using--UTF-8--enconding")%></li>
+						<li><%=LanguageUtil.get(pageContext,"There-CSV-file-must-have-two-extra-fields")%></li>
+						<li><%=LanguageUtil.get(pageContext,"A-key-field-must-be-selected")%></li>
+					</ol>
+				</div>
+			</dd>
+			<dt><%=LanguageUtil.get(pageContext,"Key-Fields")%>:</dt>
+			<dd>
+				<table>
+					<tbody id="import_fields_table"> </tbody>
 				</table>
-			</td>
-		</tr>
-	</table>
+			</dd>
+			<dt><%=LanguageUtil.get(pageContext,"content-importer-file-path")%>:</dt>
+			<dd><input class="form-text" dojoType="dijit.form.TextBox" name="filePath" size="75" id="filePath" value="<%= UtilMethods.isSet(contentImporterForm.getFilePath()) ? contentImporterForm.getFilePath() : "" %>" style="width: 300px;" type="text" ></dd>
+			<dt><%=LanguageUtil.get(pageContext,"content-importer-report-email")%>:</dt>
+			<dd><input class="form-text" dojoType="dijit.form.TextBox" name="reportEmail" size="75" id="reportEmail" value="<%= UtilMethods.isSet(contentImporterForm.getReportEmail()) ? contentImporterForm.getReportEmail() : "" %>" style="width: 300px;" type="text" ></dd>
+			<dt><%=LanguageUtil.get(pageContext,"content-importer-csv-separator-delimiter")%>:</dt>
+			<dd><input class="form-text" dojoType="dijit.form.TextBox" name="csvSeparatorDelimiter" size="75" id="csvSeparatorDelimiter" value="<%= UtilMethods.isSet(contentImporterForm.getCsvSeparatorDelimiter()) ? contentImporterForm.getCsvSeparatorDelimiter() : "" %>" style="width: 300px;" type="text" size="3"></dd>
+			<dt><%=LanguageUtil.get(pageContext,"content-importer-csv-text-delimiter")%>:</dt>
+			<dd><input class="form-text" dojoType="dijit.form.TextBox" name="csvTextDelimiter" size="75" id="csvTextDelimiter" value="<%= UtilMethods.isSet(contentImporterForm.getCsvTextDelimiter()) ? contentImporterForm.getCsvTextDelimiter().replaceAll("\"","&quot;"):"" %>" style="width: 300px;" type="text" size="3"></dd>
+			<dt><%=LanguageUtil.get(pageContext,"content-importer-publish-content")%>:</dt>
+			<dd><input type="checkbox" class="form-text" dojoType="dijit.form.CheckBox" name="publishContent" id="publishContent" value="true" <%= contentImporterForm.isPublishContent() ? "checked" : "" %> ></dd>
+		</dl>
+
+	</div>
+</div>
+
+
+
 </html:form>
+<div class="buttonRow">
+	<% if ((contentImporterForm != null) && (!contentImporterForm.isNewForm())) { %>
+		<button dojoType="dijit.form.Button" onClick="deleteSchedule(document.getElementById('fm'))" iconClass="deleteIcon">
+			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete")) %>
+		</button>
+	<% } %>
+		<button dojoType="dijit.form.Button"  onClick="cancelEdit()" iconClass="cancelIcon">
+			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
+		</button>
+		<button dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'))" iconClass="saveIcon">
+			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
+		</button>
+	</div>
 </liferay:box>
 
 <script type="text/javascript">
-	var select = document.getElementById("structure");
-	var index = select.selectedIndex;
-	if (-1 < index) {
-		structureChanged(select.options[index].value);
+dojo.addOnLoad(function() {
+	var structure = dijit.byId("structuresSelect").attr('value');
+	if ((structure != null) && (structure != '')) {
+		structureChanged(structure);
 	}
+	languageChanged();
+
+	<%
+	if (!UtilMethods.isSet(contentImporterForm.getJobGroup())) {
+	%>
+		document.getElementById('haveStartDate').checked = true;
+	<%
+		}
+	%>
+		checkDate(document.forms[0].haveStartDate, 'startDate');
+		amPm('startDate');
+		updateDate('startDate');
+	<%
+	if (!UtilMethods.isSet(contentImporterForm.getJobGroup())) {
+	%>
+		document.getElementById('haveEndDate').checked = true;
+	<%
+		}
+	%>
+		checkDate(document.forms[0].haveEndDate, 'endDate');
+		amPm('endDate');
+		updateDate('endDate');
+
+		amPm('atTime');
+		amPm('betweenFrom');
+		amPm('betweenTo');
+		updateDateOnly('everyDate');
+});
 </script>

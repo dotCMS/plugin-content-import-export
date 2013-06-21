@@ -13,8 +13,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
-import net.sf.hibernate.mapping.Collection;
-
+import org.dotcms.plugins.contentImporter.util.ContentletUtil;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
@@ -22,15 +21,8 @@ import org.quartz.JobExecutionException;
 
 import com.csvreader.CsvReader;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
-import com.dotmarketing.cms.factories.PublicUserFactory;
 import com.dotmarketing.plugin.business.PluginAPI;
-import com.dotmarketing.portlets.categories.business.CategoryAPI;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Mailer;
 import com.dotmarketing.util.UtilMethods;
@@ -71,19 +63,19 @@ public class ContentImporterThread implements Job {
 		}		
 
 		try {
-			long structure = Long.parseLong((String) properties.get("structure"));
+			String structure = (String) properties.get("structure");
 
-			long[] fields = {};
+			String[] fields = {};
 			if (UtilMethods.isSet(properties.get("fields"))) {
 				String[] strFields = ((String) properties.get("fields")).split(",");
-				List<Long> longFields = new ArrayList<Long>(strFields.length);
+				List<String> longFields = new ArrayList<String>(strFields.length);
 				for (String field: strFields) {
-					longFields.add(Long.parseLong(field));
+					longFields.add(field);
 				}
 
-				long[] tempArray = new long[longFields.size()];
+				String[] tempArray = new String[longFields.size()];
 				for (int pos = 0; pos < longFields.size(); ++pos) {
-					tempArray[pos] = longFields.get(pos).longValue();
+					tempArray[pos] = longFields.get(pos);
 				}
 				fields = tempArray;
 			}
@@ -113,7 +105,7 @@ public class ContentImporterThread implements Job {
 			if (!tempfile.exists()) {
 				((List<String>) results.get("errors")).add("File: " + filePath + " doesn't exist.");
 
-				sendResults(results, reportEmail, fileName + " Import Results",logPath, fileName);
+				sendResults(results, reportEmail, fileName + " Import Results", logPath, fileName);
 			}else if(tempfile.isDirectory()){
 				File[] files = tempfile.listFiles();
 				for(File  f : files){
@@ -129,15 +121,15 @@ public class ContentImporterThread implements Job {
 				if (!file.exists()) {
 					((List<String>) results.get("errors")).add("File: " + filePath + " doesn't exist.");
 
-					sendResults(results, reportEmail, fileName + " Import Results",logPath, fileName);
+					sendResults(results, reportEmail, fileName + " Import Results", logPath, fileName);
 				} else if (!file.isFile()) {
 					((List<String>) results.get("errors")).add(filePath + " isn't a file.");
 
-					sendResults(results, reportEmail, fileName + " Import Results",logPath, fileName);
+					sendResults(results, reportEmail, fileName + " Import Results", logPath, fileName);
 				} else if (!file.canRead()) {
 					((List<String>) results.get("errors")).add("File: " + filePath + " can't be readed.");
 
-					sendResults(results, reportEmail, fileName + " Import Results",logPath, fileName);
+					sendResults(results, reportEmail, fileName + " Import Results", logPath, fileName);
 				} else {
 					Reader reader = null;
 					CsvReader csvreader = null;
@@ -155,7 +147,7 @@ public class ContentImporterThread implements Job {
 
 						csvreader.setSafetySwitch(false);
 
-						User user = PublicUserFactory.getSystemUser();
+						User user = APILocator.getUserAPI().getSystemUser();
 
 						if (csvreader.readHeaders()) 
 						{	        			
@@ -164,6 +156,7 @@ public class ContentImporterThread implements Job {
 						}	        			        	
 					} catch (Exception e) {
 						((List<String>) results.get("errors")).add("Exception: " + e.toString());
+						Logger.error(ContentImporterThread.class, e.getMessage(),e);
 					} finally {
 						if (reader != null) {
 							try {
@@ -180,7 +173,7 @@ public class ContentImporterThread implements Job {
 						}
 
 						moveImportedFile(file.getPath());
-						sendResults(results, reportEmail, fileName + " Import Results",logPath, fileName);						
+						sendResults(results, reportEmail, fileName + " Import Results", logPath, fileName);						
 					}
 				}
 			}
@@ -271,7 +264,6 @@ public class ContentImporterThread implements Job {
 			}
 		}
 	}
-
 
 	private void contentImporterLogger(String filePath, String fileName, String message) {
 		BufferedWriter out = null;

@@ -1,3 +1,4 @@
+<%@ page import="javax.portlet.WindowState" %>
 <%@ include file="/html/plugins/org.dotcms.plugins.contentImporter/init.jsp" %>
 <%@ include file="/html/common/messages_inc.jsp" %>
 <%@ page import="org.dotcms.plugins.contentImporter.util.ContentImporterQuartzUtils" %>
@@ -18,13 +19,14 @@
 	String referrer = com.dotmarketing.util.PortletURLUtil.getRenderURL(request, javax.portlet.WindowState.MAXIMIZED.toString(), params);
 %>
 
-<script type="text/javascript">
+
+<%@page import="com.dotmarketing.quartz.CronScheduledTask"%><script type="text/javascript">
 function deleteJob(jobName,jobGroup)
 {
-	if(confirm('Do you want to delete \'' + jobName+ '\' ?'))
+	if(confirm('<%=LanguageUtil.get(pageContext,"content-importer-delete-job")%> \'' + jobName+ '\' ?'))
 	{
 		var action = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
-		action +=    "<portlet:param name='struts_action' value='/ext/content_importer/edit_jobs' />";		
+		action +=    "<portlet:param name='struts_action' value='/ext/content_importer/edit_job' />";		
 		action +=    "<portlet:param name='cmd' value='<%=Constants.DELETE%>' />";
 		action +=    "<portlet:param name='referrer' value='<%= referrer %>' />";
 		action +=    "</portlet:actionURL>";
@@ -37,16 +39,37 @@ function deleteJob(jobName,jobGroup)
 
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 	<liferay:param name="box_title" value="Content Import Jobs" />
+	<style>
+		.dijitSelect .dijitButtonText{width:150px;text-align:left;}
+	</style>
+<div class="yui-g portlet-toolbar">
+	<div class="yui-u first" style="white-space: nowrap">
+		<button dojoType="dijit.form.Button" onClick="showAllJobs()()" iconClass="searchIcon">
+		   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "view-all")) %>
+		</button>		
+	</div>
+	<div class="buttonBoxRight">
+		<button dojoType="dijit.form.ComboButton" id="contentAddButton" optionsTitle='createOptions' onClick="addJobJobs()" iconClass="plusIcon" title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Edit-Content-Import-Job" )) %>">
+			<span><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Edit-Content-Import-Job" )) %></span>
+			<div dojoType="dijit.Menu" id="createMenu" style="display: none;">
+				<div dojoType="dijit.MenuItem" iconClass="plusIcon" onClick="addJobJobs()">
+					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Edit-Content-Import-Job" )) %>
+				</div>
+				<div dojoType="dijit.MenuItem" iconClass="uploadIcon" onClick="importExternalContent()">
+					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Import-External-Content" )) %>
+				</div>
+			</div>
+		</button>
+	</div>
+</div>
 
-	<table border="0" cellpadding="0" cellspacing="0" width="100%" >
-		<tr>
-			<td>
+	<form action="" method="post" name="order">
 				<table border="0" cellpadding="0" cellspacing="0" width="100%" class="listingTable">
 					
 					<tr class="header" height="18px">
-						<td align="right" width="50">Action</td>
-						<td>Name</td>
-						<td>Description</td>
+						<th align="right" width="50"><%=LanguageUtil.get(pageContext, "action")%></th>
+						<th><%=LanguageUtil.get(pageContext, "name")%></td>
+						<th><%=LanguageUtil.get(pageContext, "Description")%></th>
 					</tr>
 
 					<% java.util.List lists = (java.util.List) request.getAttribute(com.dotmarketing.util.WebKeys.SCHEDULER_LIST_VIEW);
@@ -62,29 +85,29 @@ function deleteJob(jobName,jobGroup)
 							  str_style="class=\"alternate_2\"";
 							}
 							
-							com.dotmarketing.portlets.scheduler.model.Scheduler scheduler = (com.dotmarketing.portlets.scheduler.model.Scheduler) lists.get(k);
+							CronScheduledTask scheduler = (CronScheduledTask) lists.get(k);
 							itemShowed = true;
 					%>
 						<tr <%= str_style %>>
 							<td align="center" width="50" class="icons">
 							
 								<a href="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
-								<portlet:param name="struts_action" value="/ext/content_importer/edit_jobs" />
+								<portlet:param name="struts_action" value="/ext/content_importer/edit_job" />
 								<portlet:param name="name" value="<%= scheduler.getJobName() %>" />
 								<portlet:param name="group" value="<%= ContentImporterQuartzUtils.quartzGroup %>" />
 								<portlet:param name="<%= Constants.CMD %>" value="<%= Constants.EDIT %>" /></portlet:actionURL>">
-								<IMG border="0" src="/portal/images/icon_edit.gif">
+								<IMG border="0" src="/html/images/icons/pencil.png">
 								</a>
 								
 								<a href="javascript:deleteJob('<%= scheduler.getJobName() %>','<%= ContentImporterQuartzUtils.quartzGroup %>');">
-								<IMG border="0" src="/portal/images/icon_delete.gif">
+								<IMG border="0" src="/html/images/icons/cross.png">
 								</a>
 
 							</td>
 							
 							<td>
 								<a href="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
-								<portlet:param name="struts_action" value="/ext/content_importer/edit_jobs" />
+								<portlet:param name="struts_action" value="/ext/content_importer/edit_job" />
 								<portlet:param name="name" value="<%= scheduler.getJobName() %>" />
 								<portlet:param name="group" value="<%= ContentImporterQuartzUtils.quartzGroup %>" />
 								<portlet:param name="<%= Constants.CMD %>" value="<%= Constants.EDIT %>" />
@@ -98,38 +121,34 @@ function deleteJob(jobName,jobGroup)
 						</tr>
 						<%
 					}%>
-						<tr>
-							<td colspan="2" align=left>
-							<% if (minIndex != 0) { %>
-							<img src="<%= SKIN_COMMON_IMG %>/02_left.gif">
-			   				<a href="<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
-							<portlet:param name="struts_action" value="/ext/content_importer/view_jobs" />
-							<portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber - 1) %>" />
-							</portlet:renderURL>">Previous</a>
-							<% } %>
-							</td>
-							
-							<td colspan="1" align=right>
-							<% if (maxIndex < lists.size()) { %>
-			   				<a class="bg" href="<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
-							<portlet:param name="struts_action" value="/ext/content_importer/view_jobs" />
-							<portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber + 1) %>" />
-							</portlet:renderURL>">Next</a>
-							<img src="<%= SKIN_COMMON_IMG %>/02_right.gif">
-							<% } %>
-							</td>
-						</tr>
-						
 					<% if (!itemShowed) { %>
-					<tr><td colspan=3>&nbsp;</td></tr>
 					<tr>
-						<td colspan="3" align=center>
-							There are no Content Import Jobs to show
+						<td colspan="4">
+							<div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "There-are-no-Content-Import-Jobs-to-display") %></div>
 						</td>
-					</tr>
+					</tr>					
 					<% } %>
-				</table>
-			</td>
-		</tr>
-	</table>
+				</table>	
+				<!-- Start Pagination -->
+				<div class="yui-gb buttonRow">
+					<div class="yui-u first" style="text-align:left;">		     
+						<% if (minIndex != 0) { %>
+							<button dojoType="dijit.form.Button" onClick="window.location.href = '<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/structure/view_jobs" /><portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber - 1) %>" /></portlet:renderURL>';" iconClass="previousIcon" type="button">
+								<%= LanguageUtil.get(pageContext, "Previous") %>
+							</button>
+						<% } %>&nbsp;
+					</div>
+					<div class="yui-u">
+						<%= LanguageUtil.get(pageContext, "Viewing") %>  <%= minIndex+1 %> - <% if (maxIndex > lists.size()) { %> <%= lists.size() %> <%}else{%>  <%= maxIndex %> <% } %> <%= LanguageUtil.get(pageContext, "of1") %> <% if (maxIndex > lists.size()) { %> <%= lists.size() %> <%}else{%> <%= lists.size() %> <%}%>
+					</div>
+					<div class="yui-u" style="text-align:right;">
+						<% if (maxIndex < lists.size()) { %>
+							<button dojoType="dijit.form.Button" onClick="window.location.href = '<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/structure/view_jobs" /><portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber + 1) %>" /></portlet:renderURL>';" iconClass="nextIcon" type="button">
+								<%= LanguageUtil.get(pageContext, "Next") %>
+							</button>
+						<% } %>&nbsp;
+					</div>
+				</div>
+			<!-- END Pagination -->		
+	</form>
 </liferay:box>
