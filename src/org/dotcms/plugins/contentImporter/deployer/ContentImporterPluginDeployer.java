@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.jsp.html.portlet.ext.containers.add_005fvariables_jsp;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.RoleAPI;

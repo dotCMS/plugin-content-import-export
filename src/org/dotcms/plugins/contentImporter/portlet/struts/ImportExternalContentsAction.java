@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
 import java.sql.Timestamp;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -37,7 +38,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
-import com.dotmarketing.db.DotHibernate;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -58,12 +59,12 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.tag.factories.TagFactory;
+import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.ImportUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
-import com.dotmarketing.util.lucene.LuceneUtils;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
@@ -89,12 +90,15 @@ public class ImportExternalContentsAction extends DotPortletAction{
 	private final static LanguageAPI langAPI = APILocator.getLanguageAPI();
 	private final static HostAPI hostAPI = APILocator.getHostAPI();
 	private final static FolderAPI folderAPI = APILocator.getFolderAPI();
+	private final static TagAPI tagAPI = APILocator.getTagAPI();
 
 	private final static String languageCodeHeader = "languageCode";
 	private final static String countryCodeHeader = "countryCode";
 	private final static String FILE_TITLE="title";
 	private final static String FILE_PATH="path";
 	private final static String FILE_CONTENT="content";
+
+	private static final SimpleDateFormat DATE_FIELD_FORMAT = new SimpleDateFormat("yyyyMMdd");
 
 
 	/**
@@ -339,7 +343,7 @@ public class ImportExternalContentsAction extends DotPortletAction{
 
 		out.flush();
 		out.close();
-		DotHibernate.closeSession();
+		HibernateUtil.closeSession();
 	}
 
 	private void _generatePreview(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user, byte[] bytes, String[] csvHeaders, CsvReader csvreader, int languageCodeHeaderColumn, int countryCodeHeaderColumn, Reader reader) throws Exception {
@@ -486,7 +490,7 @@ public class ImportExternalContentsAction extends DotPortletAction{
 				if (headers.size() > 0) {
 
 					if (!preview)
-						DotHibernate.startTransaction();
+						HibernateUtil.startTransaction();
 
 					String[] csvLine;
 					Language dotCMSLanguage;
@@ -516,8 +520,8 @@ public class ImportExternalContentsAction extends DotPortletAction{
 							}
 
 							if (!preview && (lineNumber % commitGranularity == 0)) {
-								DotHibernate.commitTransaction();
-								DotHibernate.startTransaction();
+								HibernateUtil.commitTransaction();
+								HibernateUtil.startTransaction();
 							}
 
 							if (!preview)
@@ -540,7 +544,7 @@ public class ImportExternalContentsAction extends DotPortletAction{
 						results.get("counters").add("errors="+errors);
 						results.get("counters").add("newContent="+counters.getNewContentCounter());
 						results.get("counters").add("contentToUpdate="+counters.getContentToUpdateCounter());
-						DotHibernate.commitTransaction();
+						HibernateUtil.commitTransaction();
 					}
 
 					results.get("messages").add(lines + " "+LanguageUtil.get(user, "lines-of-data-were-read" ));
@@ -813,16 +817,18 @@ public class ImportExternalContentsAction extends DotPortletAction{
 					String text = null;
 					if (value instanceof Date || value instanceof Timestamp) {
 						SimpleDateFormat formatter = null;
-						if(field.getFieldType().equals(Field.FieldType.DATE.toString())
-								|| field.getFieldType().equals(Field.FieldType.DATE_TIME.toString()))
-						{
-							text = LuceneUtils.toLuceneDate((Date)value);
-						} else if(field.getFieldType().equals(Field.FieldType.TIME.toString())) {
-							text =  LuceneUtils.toLuceneTime((Date)value);
+						if(field.getFieldType().equals(Field.FieldType.DATE.toString())){
+							text = DATE_FIELD_FORMAT.format((Date)value);
+						}else if(field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())){
+							DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
+							text = df.format((Date)value);
+						}else if(field.getFieldType().equals(Field.FieldType.TIME.toString())) {
+							DateFormat df = new SimpleDateFormat("HHmmss");
+							text =  df.format((Date)value);
 						} else {
 							formatter = new SimpleDateFormat();
 							text = formatter.format(value);
-							Logger.warn(getClass(),"importLine: field's date format is undetermined.");
+							Logger.warn(ImportUtil.class,"importLine: field's date format is undetermined.");
 						}                              
 					} else {
 						text = UtilMethods.doubleQuoteIt(value.toString());
@@ -867,8 +873,8 @@ public class ImportExternalContentsAction extends DotPortletAction{
 				isNew = true;
 				//if (!preview) {
 				Contentlet newCont = new Contentlet();
-				newCont.setLive(true);
-				newCont.setWorking(true);
+				//APILocator.getVersionableAPI().setLive(newCont);
+				//APILocator.getVersionableAPI().setWorking(newCont);
 				newCont.setStructureInode(structure.getInode());
 				newCont.setLanguageId(language);
 				contentlets.add(newCont);
@@ -890,8 +896,8 @@ public class ImportExternalContentsAction extends DotPortletAction{
 								counters.setNewContentCounter(counters.getNewContentCounter() + 1);
 								Contentlet newCont = new Contentlet();
 								newCont.setIdentifier(contentlet.getIdentifier());
-								newCont.setLive(true);
-								newCont.setWorking(true);
+								//APILocator.getVersionableAPI().setLive(newCont);
+								//APILocator.getVersionableAPI().setWorking(newCont);
 								newCont.setStructureInode(structure.getInode());
 								newCont.setLanguageId(language);
 								multilingualContentlets.add(newCont);
@@ -935,7 +941,7 @@ public class ImportExternalContentsAction extends DotPortletAction{
 					if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) { // DOTCMS-4484
 
 						Host host = hostAPI.find(value.toString(), user, false);				
-						Folder folder = folderAPI.find(value.toString());
+						Folder folder = folderAPI.find(value.toString(), user, false);
 
 						if (folder != null && folder.getInode().equalsIgnoreCase(value.toString())) {
 							if (!permissionAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)) {
@@ -949,7 +955,7 @@ public class ImportExternalContentsAction extends DotPortletAction{
 								throw new DotSecurityException("User have no Add Children Permissions on selected host");
 							}
 							cont.setHost(value.toString());
-							cont.setFolder(FolderAPI.SYSTEM_FOLDER_ID);
+							cont.setFolder(FolderAPI.SYSTEM_FOLDER);
 						} 
 						continue;
 					}
@@ -958,7 +964,11 @@ public class ImportExternalContentsAction extends DotPortletAction{
 							value instanceof String) {
 						String[] tags = ((String)value).split(",");
 						for (String tag : tags) {
-							TagFactory.addTagInode((String)tag.trim(), cont.getInode());
+							try {
+								tagAPI.addTagInode((String)tag.trim(), cont.getInode(), Host.SYSTEM_HOST);
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
 						}
 					}
 				}
@@ -1041,6 +1051,9 @@ public class ImportExternalContentsAction extends DotPortletAction{
 				{
 					cont.setLowIndexPriority(true);
 					cont = conAPI.checkin(cont, new ArrayList<Category>(categories), structurePermissions, user, false);
+					APILocator.getVersionableAPI().setLive(cont);
+					APILocator.getVersionableAPI().setWorking(cont);
+
 					results.get("lastInode").clear();
 					List<String> l = results.get("lastInode");
 					l.add(cont.getInode());
@@ -1149,14 +1162,16 @@ public class ImportExternalContentsAction extends DotPortletAction{
 			java.io.InputStream stream = conn.getErrorStream( );
 			if ( stream != null )
 				content = readStream(charset, length, stream );
-			else if ( (content = conn.getContent( )) != null &&
-					content instanceof java.io.InputStream )
+			else if ( (content = conn.getContent( )) != null && content instanceof java.io.InputStream )
 				content = readStream(charset, length, (java.io.InputStream)content );
 
 			conn.disconnect( );
 
-			return new String(((byte[])content));	
-
+			if(content instanceof String){
+				return (String) content;
+			}else{
+				return new String(((byte[])content));	
+			}
 		}catch(Exception e1){
 			Logger.error(ContentletUtil.class, e1.getMessage());
 			return null;
@@ -1192,8 +1207,9 @@ public class ImportExternalContentsAction extends DotPortletAction{
 		}
 		try {
 			return new String( bytes, charset );
-		} catch(java.io.UnsupportedEncodingException e ) { }
-		return bytes;
+		} catch(java.io.UnsupportedEncodingException e ) { 
+			return bytes;
+		}
 	}
 
 }

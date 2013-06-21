@@ -17,6 +17,7 @@ import com.dotmarketing.quartz.QuartzUtils;
 
 public class ContentImporterQuartzUtils extends QuartzUtils {
 	public static String quartzGroup = "DotCMS Content Importer";
+	public static String quartzExportGroup = "DotCMS Content Exporter";
 	
 	public static List<CronScheduledTask> getConfiguredSchedulers(String[] groupNames) {
 		List<CronScheduledTask> result = new ArrayList<CronScheduledTask>(10);

@@ -13,7 +13,7 @@
 	int maxIndex = perPage * pageNumber;
 	
 	java.util.Hashtable params = new java.util.Hashtable ();
-	params.put("struts_action", new String [] {"/ext/content_importer/view_jobs"} );
+	params.put("struts_action", new String [] {"/ext/content_importer/view_export_jobs"} );
 	params.put("pageNumber",new String[] { pageNumber + "" });
 	
 	String referrer = com.dotmarketing.util.PortletURLUtil.getRenderURL(request, javax.portlet.WindowState.MAXIMIZED.toString(), params);
@@ -21,12 +21,12 @@
 
 
 <%@page import="com.dotmarketing.quartz.CronScheduledTask"%><script type="text/javascript">
-function deleteJob(jobName,jobGroup)
+function deleteExportJob(jobName,jobGroup)
 {
 	if(confirm('<%=LanguageUtil.get(pageContext,"content-importer-delete-job")%> \'' + jobName+ '\' ?'))
 	{
 		var action = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
-		action +=    "<portlet:param name='struts_action' value='/ext/content_importer/edit_job' />";		
+		action +=    "<portlet:param name='struts_action' value='/ext/content_importer/edit_export_job' />";		
 		action +=    "<portlet:param name='cmd' value='<%=Constants.DELETE%>' />";
 		action +=    "<portlet:param name='referrer' value='<%= referrer %>' />";
 		action +=    "</portlet:actionURL>";
@@ -44,13 +44,13 @@ function deleteJob(jobName,jobGroup)
 	</style>
 <div class="yui-g portlet-toolbar">
 	<div class="yui-u first" style="white-space: nowrap">
-		<button dojoType="dijit.form.Button" onClick="showAllJobs()" iconClass="searchIcon">
+		<button dojoType="dijit.form.Button" onClick="exportContent()" iconClass="searchIcon">
 		   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "view-all")) %>
 		</button>		
 	</div>
 	<div class="buttonBoxRight">
-		<button dojoType="dijit.form.ComboButton" id="contentAddButton" optionsTitle='createOptions' onClick="addJobJobs()" iconClass="plusIcon" title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Edit-Content-Import-Job" )) %>">
-			<span><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Edit-Content-Import-Job" )) %></span>
+		<button dojoType="dijit.form.ComboButton" id="contentAddButton" optionsTitle='createOptions' onClick="addExportJob()" iconClass="plusIcon" title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Edit-Content-Export-Job" )) %>">
+			<span><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Edit-Content-Export-Job" )) %></span>
 			<div dojoType="dijit.Menu" id="createMenu" style="display: none;">
 				<div dojoType="dijit.MenuItem" iconClass="plusIcon" onClick="addExportJob()">
 					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Edit-Content-Export-Job" )) %>
@@ -101,14 +101,14 @@ function deleteJob(jobName,jobGroup)
 							<td align="center" width="50" class="icons">
 							
 								<a href="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
-								<portlet:param name="struts_action" value="/ext/content_importer/edit_job" />
+								<portlet:param name="struts_action" value="/ext/content_importer/edit_export_job" />
 								<portlet:param name="name" value="<%= scheduler.getJobName() %>" />
-								<portlet:param name="group" value="<%= ContentImporterQuartzUtils.quartzGroup %>" />
+								<portlet:param name="group" value="<%= ContentImporterQuartzUtils.quartzExportGroup %>" />
 								<portlet:param name="<%= Constants.CMD %>" value="<%= Constants.EDIT %>" /></portlet:actionURL>">
 								<IMG border="0" src="/html/images/icons/pencil.png">
 								</a>
 								
-								<a href="javascript:deleteJob('<%= scheduler.getJobName() %>','<%= ContentImporterQuartzUtils.quartzGroup %>');">
+								<a href="javascript:deleteExportJob('<%= scheduler.getJobName() %>','<%= ContentImporterQuartzUtils.quartzExportGroup %>');">
 								<IMG border="0" src="/html/images/icons/cross.png">
 								</a>
 
@@ -116,9 +116,9 @@ function deleteJob(jobName,jobGroup)
 							
 							<td>
 								<a href="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
-								<portlet:param name="struts_action" value="/ext/content_importer/edit_job" />
+								<portlet:param name="struts_action" value="/ext/content_importer/edit_export_job" />
 								<portlet:param name="name" value="<%= scheduler.getJobName() %>" />
-								<portlet:param name="group" value="<%= ContentImporterQuartzUtils.quartzGroup %>" />
+								<portlet:param name="group" value="<%= ContentImporterQuartzUtils.quartzExportGroup %>" />
 								<portlet:param name="<%= Constants.CMD %>" value="<%= Constants.EDIT %>" />
 								</portlet:actionURL>"><%= scheduler.getJobName() %>
 								</a>
@@ -133,7 +133,7 @@ function deleteJob(jobName,jobGroup)
 					<% if (!itemShowed) { %>
 					<tr>
 						<td colspan="4">
-							<div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "There-are-no-Content-Import-Jobs-to-display") %></div>
+							<div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "There-are-no-Content-Export-Jobs-to-display") %></div>
 						</td>
 					</tr>					
 					<% } %>
@@ -142,7 +142,7 @@ function deleteJob(jobName,jobGroup)
 				<div class="yui-gb buttonRow">
 					<div class="yui-u first" style="text-align:left;">		     
 						<% if (minIndex != 0) { %>
-							<button dojoType="dijit.form.Button" onClick="window.location.href = '<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/structure/view_jobs" /><portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber - 1) %>" /></portlet:renderURL>';" iconClass="previousIcon" type="button">
+							<button dojoType="dijit.form.Button" onClick="window.location.href = '<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/structure/view_export_jobs" /><portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber - 1) %>" /></portlet:renderURL>';" iconClass="previousIcon" type="button">
 								<%= LanguageUtil.get(pageContext, "Previous") %>
 							</button>
 						<% } %>&nbsp;
@@ -152,7 +152,7 @@ function deleteJob(jobName,jobGroup)
 					</div>
 					<div class="yui-u" style="text-align:right;">
 						<% if (maxIndex < lists.size()) { %>
-							<button dojoType="dijit.form.Button" onClick="window.location.href = '<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/structure/view_jobs" /><portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber + 1) %>" /></portlet:renderURL>';" iconClass="nextIcon" type="button">
+							<button dojoType="dijit.form.Button" onClick="window.location.href = '<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/structure/view_export_jobs" /><portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber + 1) %>" /></portlet:renderURL>';" iconClass="nextIcon" type="button">
 								<%= LanguageUtil.get(pageContext, "Next") %>
 							</button>
 						<% } %>&nbsp;

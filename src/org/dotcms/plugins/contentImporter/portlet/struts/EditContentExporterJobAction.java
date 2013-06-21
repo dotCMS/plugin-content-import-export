@@ -17,7 +17,7 @@ import javax.portlet.PortletConfig;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
-import org.dotcms.plugins.contentImporter.portlet.form.ContentImporterForm;
+import org.dotcms.plugins.contentImporter.portlet.form.ContentExporterForm;
 
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.quartz.CronScheduledTask;
@@ -30,17 +30,19 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
 import com.liferay.util.servlet.SessionMessages;
-/**
- * @author Armando
- */
 
-public class EditContentImporterJobAction extends DotPortletAction {
+/**
+ * This class create, edit and delete export content quartz job
+ * @author Oswaldo
+ *
+ */
+public class EditContentExporterJobAction extends DotPortletAction {
 
 	public void processAction(ActionMapping mapping, ActionForm form, PortletConfig config, ActionRequest req, ActionResponse res)
 	throws Exception {
 
 		String cmd = req.getParameter(Constants.CMD);
-		Logger.debug(this, "Inside EditContentImporterJobAction cmd=" + cmd);
+		Logger.debug(this, "Inside EditContentExporterJobAction cmd=" + cmd);
 
 		//get the user
 		User user = _getUser(req);
@@ -62,38 +64,38 @@ public class EditContentImporterJobAction extends DotPortletAction {
 		if ((cmd != null) && cmd.equals(Constants.ADD)) {
 			try {
 
-				ContentImporterForm contentImporterForm = (ContentImporterForm) form;
+				ContentExporterForm contentExporterForm = (ContentExporterForm) form;
 				boolean hasErrors = false;
 
-				if (!UtilMethods.isSet(contentImporterForm.getJobName())) {
+				if (!UtilMethods.isSet(contentExporterForm.getJobName())) {
 					SessionMessages.add(req, "error", "message.Scheduler.invalidJobName");
 					hasErrors = true;
-				} else if (!contentImporterForm.isEditMode() && (scheduler != null)) {
+				} else if (!contentExporterForm.isEditMode() && (scheduler != null)) {
 					SessionMessages.add(req, "error", "message.Scheduler.jobAlreadyExists");
 					hasErrors = true;
 				}
 
 				SimpleDateFormat sdf = new SimpleDateFormat(WebKeys.DateFormats.DOTSCHEDULER_DATE2);
 
-				if(contentImporterForm.isHaveCronExpression()){
-					if(!UtilMethods.isSet(contentImporterForm.getCronExpression())){
+				if(contentExporterForm.isHaveCronExpression()){
+					if(!UtilMethods.isSet(contentExporterForm.getCronExpression())){
 						SessionMessages.add(req, "error", "message.Scheduler.cronexpressionNeeded");
 						hasErrors = true;
 					}
 				}
 				Date endDate = null;
-				if (contentImporterForm.isHaveEndDate()) {
+				if (contentExporterForm.isHaveEndDate()) {
 					try {
-						endDate = sdf.parse(contentImporterForm.getEndDate());
+						endDate = sdf.parse(contentExporterForm.getEndDate());
 					} catch (Exception e) {
 					}
 				}
 
 				if ((endDate != null) && !hasErrors) {
 					Date startDate = null;
-					if (contentImporterForm.isHaveStartDate()) {
+					if (contentExporterForm.isHaveStartDate()) {
 						try {
-							startDate = sdf.parse(contentImporterForm.getStartDate());
+							startDate = sdf.parse(contentExporterForm.getStartDate());
 						} catch (Exception e) {
 						}
 					}
@@ -110,19 +112,19 @@ public class EditContentImporterJobAction extends DotPortletAction {
 					}
 				}
 
-				if (!UtilMethods.isSet(contentImporterForm.getStructure())) {
-					SessionMessages.add(req, "error", "message.content.importer.structure.required");
+				if (!UtilMethods.isSet(contentExporterForm.getStructure())) {
+					SessionMessages.add(req, "error", "message.content.exporter.structure.required");
 					hasErrors = true;
 				}
 
-				if (!UtilMethods.isSet(contentImporterForm.getFilePath())) {
-					SessionMessages.add(req, "error", "message.content.importer.file.path.required");
+				if (!UtilMethods.isSet(contentExporterForm.getFilePath())) {
+					SessionMessages.add(req, "error", "message.content.exporter.file.path.required");
 					hasErrors = true;
 				}
 
-				if ((contentImporterForm.getFields() != null) && (0 < contentImporterForm.getFields().length)) {
+				if ((contentExporterForm.getFields() != null) && (0 < contentExporterForm.getFields().length)) {
 					boolean containsIdentifier = false;
-					for (String key: contentImporterForm.getFields()) {
+					for (String key: contentExporterForm.getFields()) {
 						if (key.equals("0")) {
 							containsIdentifier = true;
 							break;
@@ -137,7 +139,7 @@ public class EditContentImporterJobAction extends DotPortletAction {
 
 						if (scheduler != null) {
 							_populateForm(form, scheduler);
-							contentImporterForm.setMap(scheduler.getProperties());
+							contentExporterForm.setMap(scheduler.getProperties());
 						}
 
 						String redirect = req.getParameter("referrer");
@@ -149,11 +151,11 @@ public class EditContentImporterJobAction extends DotPortletAction {
 					} else {
 						SessionMessages.clear(req);
 						SessionMessages.add(req, "error", "message.Scheduler.invalidJobSettings");
-						contentImporterForm.setMap(getSchedulerProperties(req, contentImporterForm));
+						contentExporterForm.setMap(getSchedulerProperties(req, contentExporterForm));
 						loadEveryDayForm(form, req);
 					}
 				} else {
-					contentImporterForm.setMap(getSchedulerProperties(req, contentImporterForm));
+					contentExporterForm.setMap(getSchedulerProperties(req, contentExporterForm));
 					loadEveryDayForm(form, req);
 				}
 			}
@@ -193,9 +195,9 @@ public class EditContentImporterJobAction extends DotPortletAction {
 		if ((cmd != null) && cmd.equals(Constants.EDIT)) {
 			if (scheduler != null) {
 				_populateForm(form, scheduler);
-				ContentImporterForm contentImporterForm = (ContentImporterForm) form;
+				ContentExporterForm contentExporterForm = (ContentExporterForm) form;
 
-				contentImporterForm.setEditMode(true);
+				contentExporterForm.setEditMode(true);
 				if (!UtilMethods.isSet(scheduler.getCronExpression())) {
 					SessionMessages.add(req, "message", "message.Scheduler.jobExpired");
 				}
@@ -206,51 +208,62 @@ public class EditContentImporterJobAction extends DotPortletAction {
 		 * return to edit page
 		 *  
 		 */
-		setForward(req, "portlet.ext.plugins.content.importer.struts.edit_job");
+		setForward(req, "portlet.ext.plugins.content.importer.struts.edit_export_job");
 	}
 
+	/**
+	 * Load EveryDay form values
+	 * @param form
+	 * @param req
+	 */
 	private void loadEveryDayForm(ActionForm form, ActionRequest req) {
 		String[] everyDay = req.getParameterValues("everyDay");
 
-		ContentImporterForm contentImporterForm = (ContentImporterForm) form;
-		if (UtilMethods.isSet(everyDay) && contentImporterForm.isEveryInfo()) {
+		ContentExporterForm contentExporterForm = (ContentExporterForm) form;
+		if (UtilMethods.isSet(everyDay) && contentExporterForm.isEveryInfo()) {
 			for (String dayOfWeek: everyDay) {
 				if (dayOfWeek.equals("MON"))
-					contentImporterForm.setMonday(true);
+					contentExporterForm.setMonday(true);
 				else if (dayOfWeek.equals("TUE"))
-					contentImporterForm.setTuesday(true);
+					contentExporterForm.setTuesday(true);
 				else if (dayOfWeek.equals("WED"))
-					contentImporterForm.setWednesday(true);
+					contentExporterForm.setWednesday(true);
 				else if (dayOfWeek.equals("THU"))
-					contentImporterForm.setThusday(true);
+					contentExporterForm.setThusday(true);
 				else if (dayOfWeek.equals("FRI"))
-					contentImporterForm.setFriday(true);
+					contentExporterForm.setFriday(true);
 				else if (dayOfWeek.equals("SAT"))
-					contentImporterForm.setSaturday(true);
+					contentExporterForm.setSaturday(true);
 				else if (dayOfWeek.equals("SUN"))
-					contentImporterForm.setSunday(true);
+					contentExporterForm.setSunday(true);
 			}
 
-			contentImporterForm.setEveryInfo(true);
-			contentImporterForm.setEvery("isDays");
+			contentExporterForm.setEveryInfo(true);
+			contentExporterForm.setEvery("isDays");
 		} else {
-			contentImporterForm.setEvery("");
-			contentImporterForm.setMonday(false);
-			contentImporterForm.setTuesday(false);
-			contentImporterForm.setWednesday(false);
-			contentImporterForm.setThusday(false);
-			contentImporterForm.setFriday(false);
-			contentImporterForm.setSaturday(false);
-			contentImporterForm.setSunday(false);
+			contentExporterForm.setEvery("");
+			contentExporterForm.setMonday(false);
+			contentExporterForm.setTuesday(false);
+			contentExporterForm.setWednesday(false);
+			contentExporterForm.setThusday(false);
+			contentExporterForm.setFriday(false);
+			contentExporterForm.setSaturday(false);
+			contentExporterForm.setSunday(false);
 		}
 	}
 
-	private Map<String, String> getSchedulerProperties(ActionRequest req, ContentImporterForm contentImporterForm) {
+	/**
+	 * Get a map with the the form properties 
+	 * @param req
+	 * @param contentExporterForm
+	 * @return Map<String,String>
+	 */
+	private Map<String, String> getSchedulerProperties(ActionRequest req, ContentExporterForm contentExporterForm) {
 		Map<String, String> properties = new HashMap<String, String>(5);
 		Enumeration<String> propertiesNames = req.getParameterNames();
 
-		if (UtilMethods.isSet(contentImporterForm.getMap())) {
-			properties = contentImporterForm.getMap();
+		if (UtilMethods.isSet(contentExporterForm.getMap())) {
+			properties = contentExporterForm.getMap();
 		}
 		else {
 			String propertyName;
@@ -270,11 +283,20 @@ public class EditContentImporterJobAction extends DotPortletAction {
 		return properties;
 	}
 
+	/**
+	 * Search the scheduler in the database
+	 * @param req
+	 * @param res
+	 * @param config
+	 * @param form
+	 * @return
+	 * @throws Exception
+	 */
 	private CronScheduledTask _retrieveScheduler(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form) throws Exception {
-		ContentImporterForm contentImporterForm = (ContentImporterForm) form;
+		ContentExporterForm contentExporterForm = (ContentExporterForm) form;
 		List<ScheduledTask> results = null;
-		if (UtilMethods.isSet(contentImporterForm.getJobGroup())){
-			results = (List<ScheduledTask>) QuartzUtils.getStandardScheduledTask(contentImporterForm.getJobName(), contentImporterForm.getJobGroup());
+		if (UtilMethods.isSet(contentExporterForm.getJobGroup())){
+			results = (List<ScheduledTask>) QuartzUtils.getStandardScheduledTask(contentExporterForm.getJobName(), contentExporterForm.getJobGroup());
 		} else{
 			results = (List<ScheduledTask>) QuartzUtils.getStandardScheduledTask(req.getParameter("name"), req.getParameter("group"));
 		}
@@ -285,36 +307,45 @@ public class EditContentImporterJobAction extends DotPortletAction {
 			return null;
 	}
 
+	/**
+	 * Save the export quartz job
+	 * @param req
+	 * @param res
+	 * @param config
+	 * @param form
+	 * @param user
+	 * @return
+	 * @throws Exception
+	 */
 	private static boolean _saveScheduler(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user) throws Exception {
-		boolean result = false;
-		ContentImporterForm contentImporterForm = (ContentImporterForm) form;
+		ContentExporterForm contentExporterForm = (ContentExporterForm) form;
 
 		SimpleDateFormat sdf = new SimpleDateFormat(WebKeys.DateFormats.DOTSCHEDULER_DATE2);
 
 		Date startDate = null;
-		if (contentImporterForm.isHaveStartDate()) {
+		if (contentExporterForm.isHaveStartDate()) {
 			try {
-				startDate = sdf.parse(contentImporterForm.getStartDate());
+				startDate = sdf.parse(contentExporterForm.getStartDate());
 			} catch (Exception e) {
 			}
 		}
 
 		Date endDate = null;
-		if (contentImporterForm.isHaveEndDate()) {
+		if (contentExporterForm.isHaveEndDate()) {
 			try {
-				endDate = sdf.parse(contentImporterForm.getEndDate());
+				endDate = sdf.parse(contentExporterForm.getEndDate());
 			} catch (Exception e) {
 			}
 		}
 
 		Map<String, Object> properties = new HashMap<String, Object>(10);
 
-		properties.put("structure", "" + contentImporterForm.getStructure());
+		properties.put("structure", "" + contentExporterForm.getStructure());
 
-		if ((contentImporterForm.getFields() != null) && (0 < contentImporterForm.getFields().length)) {
+		if ((contentExporterForm.getFields() != null) && (0 < contentExporterForm.getFields().length)) {
 			StringBuilder fields = new StringBuilder(64);
 			fields.ensureCapacity(8);
-			for (String field: contentImporterForm.getFields()) {
+			for (String field: contentExporterForm.getFields()) {
 				if (0 < fields.length())
 					fields.append("," + field);
 				else
@@ -324,27 +355,24 @@ public class EditContentImporterJobAction extends DotPortletAction {
 			properties.put("fields", fields.toString());
 		}
 
-		if (UtilMethods.isSet(contentImporterForm.getFilePath()))
-			properties.put("filePath", contentImporterForm.getFilePath());
+		if (UtilMethods.isSet(contentExporterForm.getFilePath()))
+			properties.put("filePath", contentExporterForm.getFilePath());
+		
+		if (UtilMethods.isSet(contentExporterForm.getReportEmail()))
+			properties.put("reportEmail", contentExporterForm.getReportEmail());
 
-		if (UtilMethods.isSet(contentImporterForm.getReportEmail()))
-			properties.put("reportEmail", contentImporterForm.getReportEmail());
+		if (UtilMethods.isSet(contentExporterForm.getCsvSeparatorDelimiter()))
+			properties.put("csvSeparatorDelimiter", contentExporterForm.getCsvSeparatorDelimiter());
 
-		if (UtilMethods.isSet(contentImporterForm.getCsvSeparatorDelimiter()))
-			properties.put("csvSeparatorDelimiter", contentImporterForm.getCsvSeparatorDelimiter());
+		if (UtilMethods.isSet(contentExporterForm.getCsvTextDelimiter()))
+			properties.put("csvTextDelimiter", contentExporterForm.getCsvTextDelimiter());
 
-		if (UtilMethods.isSet(contentImporterForm.getCsvTextDelimiter()))
-			properties.put("csvTextDelimiter", contentImporterForm.getCsvTextDelimiter());
+		if (UtilMethods.isSet(contentExporterForm.getLanguage()))
+			properties.put("language",Long.toString(contentExporterForm.getLanguage()));
 
-		if (UtilMethods.isSet(contentImporterForm.getLanguage()))
-			properties.put("language",Long.toString(contentImporterForm.getLanguage()));
-
-		if (contentImporterForm.isPublishContent())
-			properties.put("publishContent", "true");
-		else
-			properties.put("publishContent", "false");
-
-		properties.put("haveCronExpression", contentImporterForm.isHaveCronExpression());
+		properties.put("overWriteFile", contentExporterForm.isOverWriteFile());
+		properties.put("haveCronExpression", contentExporterForm.isHaveCronExpression());
+		properties.put("userId", user.getUserId());
 
 		String cronSecondsField = "0";
 		String cronMinutesField = "0";
@@ -356,10 +384,10 @@ public class EditContentImporterJobAction extends DotPortletAction {
 
 		String cronExpression = "";
 
-		if(contentImporterForm.isHaveCronExpression()){
-			cronExpression = contentImporterForm.getCronExpression();
+		if(contentExporterForm.isHaveCronExpression()){
+			cronExpression = contentExporterForm.getCronExpression();
 		}else{
-			if (contentImporterForm.isAtInfo()) {
+			if (contentExporterForm.isAtInfo()) {
 				if (UtilMethods.isSet(req.getParameter("at")) && req.getParameter("at").equals("isTime")) {
 					cronSecondsField = req.getParameter("atTimeSecond");
 					cronMinutesField = req.getParameter("atTimeMinute");
@@ -371,7 +399,7 @@ public class EditContentImporterJobAction extends DotPortletAction {
 				}
 			}
 
-			if (contentImporterForm.isEveryInfo()) {
+			if (contentExporterForm.isEveryInfo()) {
 				if (UtilMethods.isSet(req.getParameter("every")) && req.getParameter("every").equals("isDate")) {
 					cronDaysOfMonthField = req.getParameter("everyDateDay");
 
@@ -419,11 +447,12 @@ public class EditContentImporterJobAction extends DotPortletAction {
 
 			cronExpression = cronSecondsField + " " + cronMinutesField + " " + cronHoursField + " " + cronDaysOfMonthField + " " + cronMonthsField + " " + cronDaysOfWeekField + " " + cronYearsField;
 		}
+
 		CronScheduledTask job = new CronScheduledTask();
-		job.setJobName(contentImporterForm.getJobName());
-		job.setJobGroup(contentImporterForm.getJobGroup());
-		job.setJobDescription(contentImporterForm.getJobDescription());
-		job.setJavaClassName("org.dotcms.plugins.contentImporter.quartz.ContentImporterThread");
+		job.setJobName(contentExporterForm.getJobName());
+		job.setJobGroup(contentExporterForm.getJobGroup());
+		job.setJobDescription(contentExporterForm.getJobDescription());
+		job.setJavaClassName("org.dotcms.plugins.contentImporter.quartz.ContentExporterThread");
 		job.setProperties(properties);
 		job.setStartDate(startDate);
 		job.setEndDate(endDate);
@@ -441,36 +470,50 @@ public class EditContentImporterJobAction extends DotPortletAction {
 		return true;
 	}
 
+	/**
+	 * Delete the export quartz job specified in the form
+	 * @param req
+	 * @param res
+	 * @param config
+	 * @param form
+	 * @param user
+	 * @throws Exception
+	 */
 	private void _deleteScheduler(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form , User user) throws Exception {
-		ContentImporterForm contentImporterForm = (ContentImporterForm) form;
+		ContentExporterForm contentExporterForm = (ContentExporterForm) form;
 
-		if (UtilMethods.isSet(contentImporterForm.getJobGroup()))
-			QuartzUtils.removeJob(contentImporterForm.getJobName(), contentImporterForm.getJobGroup());
+		if (UtilMethods.isSet(contentExporterForm.getJobGroup()))
+			QuartzUtils.removeJob(contentExporterForm.getJobName(), contentExporterForm.getJobGroup());
 		else
 			QuartzUtils.removeJob(req.getParameter("name"), req.getParameter("group"));
 
 		SessionMessages.add(req, "message", "message.Scheduler.delete");
 	}
 
+	/**
+	 * Populate the ContentExporterForm with the scheduler task info
+	 * @param form
+	 * @param scheduler
+	 */
 	private void _populateForm(ActionForm form, CronScheduledTask scheduler) {
 		try {
 			BeanUtils.copyProperties(form, scheduler);
-			ContentImporterForm contentImporterForm = ((ContentImporterForm) form);
+			ContentExporterForm contentExporterForm = ((ContentExporterForm) form);
 
 			SimpleDateFormat sdf = new SimpleDateFormat(WebKeys.DateFormats.DOTSCHEDULER_DATE2);
 
 			if (scheduler.getStartDate() != null) {
-				contentImporterForm.setHaveStartDate(true);				
+				contentExporterForm.setHaveStartDate(true);				
 			} else {
-				contentImporterForm.setHaveStartDate(true);
-				contentImporterForm.setStartDate(sdf.format(new Date()));
+				contentExporterForm.setHaveStartDate(true);
+				contentExporterForm.setStartDate(sdf.format(new Date()));
 			}
 
 			if (scheduler.getEndDate() != null) {
-				contentImporterForm.setHaveEndDate(true);			
+				contentExporterForm.setHaveEndDate(true);			
 			} else {
-				contentImporterForm.setHaveEndDate(true);
-				contentImporterForm.setEndDate(sdf.format(new Date()));
+				contentExporterForm.setHaveEndDate(true);
+				contentExporterForm.setEndDate(sdf.format(new Date()));
 			}
 
 			if(UtilMethods.isSet(scheduler.getCronExpression()))
@@ -485,75 +528,75 @@ public class EditContentImporterJobAction extends DotPortletAction {
 					token = cronExpressionTokens.nextToken();
 
 					if (token.equals("*")) {
-						contentImporterForm.setAtInfo(false);
-						contentImporterForm.setAt(null);
-						contentImporterForm.setAtTimeSecond(0);
+						contentExporterForm.setAtInfo(false);
+						contentExporterForm.setAt(null);
+						contentExporterForm.setAtTimeSecond(0);
 					} else {
 						intervalTokens = token.split("/");
 						rangeTokens = intervalTokens[0].split("-");
 
 						if (rangeTokens.length == 2) {
-							contentImporterForm.setAtInfo(true);
-							contentImporterForm.setAt("isBetween");
+							contentExporterForm.setAtInfo(true);
+							contentExporterForm.setAt("isBetween");
 							try {
-								contentImporterForm.setBetweenFromSecond(Integer.parseInt(rangeTokens[0]));
-								contentImporterForm.setBetweenToSecond(Integer.parseInt(rangeTokens[1]));
+								contentExporterForm.setBetweenFromSecond(Integer.parseInt(rangeTokens[0]));
+								contentExporterForm.setBetweenToSecond(Integer.parseInt(rangeTokens[1]));
 							} catch (Exception e) {
-								contentImporterForm.setBetweenFromSecond(0);
-								contentImporterForm.setBetweenToSecond(0);
+								contentExporterForm.setBetweenFromSecond(0);
+								contentExporterForm.setBetweenToSecond(0);
 							}
 						} else {
-							contentImporterForm.setAtInfo(true);
-							contentImporterForm.setAt("isTime");
+							contentExporterForm.setAtInfo(true);
+							contentExporterForm.setAt("isTime");
 							try {
-								contentImporterForm.setAtTimeSecond(Integer.parseInt(intervalTokens[0]));
+								contentExporterForm.setAtTimeSecond(Integer.parseInt(intervalTokens[0]));
 							} catch (Exception e) {
-								contentImporterForm.setAtTimeSecond(0);
+								contentExporterForm.setAtTimeSecond(0);
 							}
 						}
 					}
 				}
 
-				contentImporterForm.setEachInfo(false);
+				contentExporterForm.setEachInfo(false);
 
 				// Minutes Cron Expression
 				if (cronExpressionTokens.hasMoreTokens()) {
 					token = cronExpressionTokens.nextToken();
 
 					if (token.equals("*")) {
-						contentImporterForm.setAtInfo(false);
-						contentImporterForm.setAt(null);
-						contentImporterForm.setAtTimeMinute(0);
+						contentExporterForm.setAtInfo(false);
+						contentExporterForm.setAt(null);
+						contentExporterForm.setAtTimeMinute(0);
 					} else {
 						intervalTokens = token.split("/");
 						rangeTokens = intervalTokens[0].split("-");
 
 						if (rangeTokens.length == 2) {
-							contentImporterForm.setAtInfo(true);
-							contentImporterForm.setAt("isBetween");
+							contentExporterForm.setAtInfo(true);
+							contentExporterForm.setAt("isBetween");
 							try {
-								contentImporterForm.setBetweenFromMinute(Integer.parseInt(rangeTokens[0]));
-								contentImporterForm.setBetweenToMinute(Integer.parseInt(rangeTokens[1]));
+								contentExporterForm.setBetweenFromMinute(Integer.parseInt(rangeTokens[0]));
+								contentExporterForm.setBetweenToMinute(Integer.parseInt(rangeTokens[1]));
 							} catch (Exception e) {
-								contentImporterForm.setBetweenFromMinute(0);
-								contentImporterForm.setBetweenToMinute(0);
+								contentExporterForm.setBetweenFromMinute(0);
+								contentExporterForm.setBetweenToMinute(0);
 							}
 						} else {
-							contentImporterForm.setAtInfo(true);
-							contentImporterForm.setAt("isTime");
+							contentExporterForm.setAtInfo(true);
+							contentExporterForm.setAt("isTime");
 							try {
-								contentImporterForm.setAtTimeMinute(Integer.parseInt(intervalTokens[0]));
+								contentExporterForm.setAtTimeMinute(Integer.parseInt(intervalTokens[0]));
 							} catch (Exception e) {
-								contentImporterForm.setAtTimeMinute(0);
+								contentExporterForm.setAtTimeMinute(0);
 							}
 						}
 
 						if (intervalTokens.length == 2) {
 							try {
-								contentImporterForm.setEachMinutes(Integer.parseInt(intervalTokens[1]));
-								contentImporterForm.setEachInfo(true);
+								contentExporterForm.setEachMinutes(Integer.parseInt(intervalTokens[1]));
+								contentExporterForm.setEachInfo(true);
 							} catch (Exception e) {
-								contentImporterForm.setEachMinutes(0);
+								contentExporterForm.setEachMinutes(0);
 							}
 						}
 					}
@@ -564,60 +607,60 @@ public class EditContentImporterJobAction extends DotPortletAction {
 					token = cronExpressionTokens.nextToken();
 
 					if (token.equals("*")) {
-						contentImporterForm.setAtInfo(false);
-						contentImporterForm.setAt(null);
-						contentImporterForm.setAtTimeHour(0);
+						contentExporterForm.setAtInfo(false);
+						contentExporterForm.setAt(null);
+						contentExporterForm.setAtTimeHour(0);
 					} else {
 						intervalTokens = token.split("/");
 						rangeTokens = intervalTokens[0].split("-");
 
 						if (rangeTokens.length == 2) {
-							contentImporterForm.setAtInfo(true);
-							contentImporterForm.setAt("isBetween");
+							contentExporterForm.setAtInfo(true);
+							contentExporterForm.setAt("isBetween");
 							try {
-								contentImporterForm.setBetweenFromHour(Integer.parseInt(rangeTokens[0]));
-								contentImporterForm.setBetweenToHour(Integer.parseInt(rangeTokens[1]));
+								contentExporterForm.setBetweenFromHour(Integer.parseInt(rangeTokens[0]));
+								contentExporterForm.setBetweenToHour(Integer.parseInt(rangeTokens[1]));
 							} catch (Exception e) {
-								contentImporterForm.setBetweenFromHour(0);
-								contentImporterForm.setBetweenToHour(0);
+								contentExporterForm.setBetweenFromHour(0);
+								contentExporterForm.setBetweenToHour(0);
 							}
 						} else {
-							contentImporterForm.setAtInfo(true);
-							contentImporterForm.setAt("isTime");
+							contentExporterForm.setAtInfo(true);
+							contentExporterForm.setAt("isTime");
 							try {
-								contentImporterForm.setAtTimeHour(Integer.parseInt(intervalTokens[0]));
+								contentExporterForm.setAtTimeHour(Integer.parseInt(intervalTokens[0]));
 							} catch (Exception e) {
-								contentImporterForm.setAtTimeHour(0);
+								contentExporterForm.setAtTimeHour(0);
 							}
 						}
 
 						if (intervalTokens.length == 2) {
 							try {
-								contentImporterForm.setEachHours(Integer.parseInt(intervalTokens[1]));
-								contentImporterForm.setEachInfo(true);
+								contentExporterForm.setEachHours(Integer.parseInt(intervalTokens[1]));
+								contentExporterForm.setEachInfo(true);
 							} catch (Exception e) {
-								contentImporterForm.setEachHours(0);
+								contentExporterForm.setEachHours(0);
 							}
 						}
 					}
 				}
 
-				contentImporterForm.setEveryInfo(false);
-				contentImporterForm.setEvery(null);
+				contentExporterForm.setEveryInfo(false);
+				contentExporterForm.setEvery(null);
 
 				// Days of Month Cron Expression
 				if (cronExpressionTokens.hasMoreTokens()) {
 					token = cronExpressionTokens.nextToken();
 
 					if (token.equals("*") || token.equals("?")) {
-						contentImporterForm.setEveryDateDay(-1);
+						contentExporterForm.setEveryDateDay(-1);
 					} else {
 						try {
-							contentImporterForm.setEveryDateDay(Integer.parseInt(token));
-							contentImporterForm.setEveryInfo(true);
-							contentImporterForm.setEvery("isDate");
+							contentExporterForm.setEveryDateDay(Integer.parseInt(token));
+							contentExporterForm.setEveryInfo(true);
+							contentExporterForm.setEvery("isDate");
 						} catch (Exception e) {
-							contentImporterForm.setEveryDateDay(-1);
+							contentExporterForm.setEveryDateDay(-1);
 						}
 					}
 				}
@@ -627,14 +670,14 @@ public class EditContentImporterJobAction extends DotPortletAction {
 					token = cronExpressionTokens.nextToken();
 
 					if (token.equals("*")) {
-						contentImporterForm.setEveryDateMonth(-1);
+						contentExporterForm.setEveryDateMonth(-1);
 					} else {
 						try {
-							contentImporterForm.setEveryDateMonth(Integer.parseInt(token));
-							contentImporterForm.setEveryInfo(true);
-							contentImporterForm.setEvery("isDate");
+							contentExporterForm.setEveryDateMonth(Integer.parseInt(token));
+							contentExporterForm.setEveryInfo(true);
+							contentExporterForm.setEvery("isDate");
 						} catch (Exception e) {
-							contentImporterForm.setEveryDateMonth(-1);
+							contentExporterForm.setEveryDateMonth(-1);
 						}
 					}
 				}
@@ -651,23 +694,23 @@ public class EditContentImporterJobAction extends DotPortletAction {
 							dayOfWeek = daysOfWeek.nextToken();
 
 							if (dayOfWeek.equals("MON"))
-								contentImporterForm.setMonday(true);
+								contentExporterForm.setMonday(true);
 							else if (dayOfWeek.equals("TUE"))
-								contentImporterForm.setTuesday(true);
+								contentExporterForm.setTuesday(true);
 							else if (dayOfWeek.equals("WED"))
-								contentImporterForm.setWednesday(true);
+								contentExporterForm.setWednesday(true);
 							else if (dayOfWeek.equals("THU"))
-								contentImporterForm.setThusday(true);
+								contentExporterForm.setThusday(true);
 							else if (dayOfWeek.equals("FRI"))
-								contentImporterForm.setFriday(true);
+								contentExporterForm.setFriday(true);
 							else if (dayOfWeek.equals("SAT"))
-								contentImporterForm.setSaturday(true);
+								contentExporterForm.setSaturday(true);
 							else if (dayOfWeek.equals("SUN"))
-								contentImporterForm.setSunday(true);
+								contentExporterForm.setSunday(true);
 						}
 
-						contentImporterForm.setEveryInfo(true);
-						contentImporterForm.setEvery("isDays");
+						contentExporterForm.setEveryInfo(true);
+						contentExporterForm.setEvery("isDays");
 					}
 				}
 
@@ -676,21 +719,21 @@ public class EditContentImporterJobAction extends DotPortletAction {
 					token = cronExpressionTokens.nextToken();
 
 					if (token.equals("*")) {
-						contentImporterForm.setEveryDateYear(-1);
+						contentExporterForm.setEveryDateYear(-1);
 					} else {
 						try {
-							contentImporterForm.setEveryDateYear(Integer.parseInt(token));
-							contentImporterForm.setEveryInfo(true);
-							contentImporterForm.setEvery("isDate");
+							contentExporterForm.setEveryDateYear(Integer.parseInt(token));
+							contentExporterForm.setEveryInfo(true);
+							contentExporterForm.setEvery("isDate");
 						} catch (Exception e) {
-							contentImporterForm.setEveryDateYear(-1);
+							contentExporterForm.setEveryDateYear(-1);
 						}
 					}
 				}
 			}
 
 			Map properties = scheduler.getProperties();
-			contentImporterForm.setStructure((String) properties.get("structure"));
+			contentExporterForm.setStructure((String) properties.get("structure"));
 
 			String[] fields = {};
 			if (UtilMethods.isSet(properties.get("fields"))) {
@@ -707,18 +750,16 @@ public class EditContentImporterJobAction extends DotPortletAction {
 				fields = tempArray;
 			}
 
-			contentImporterForm.setFields(fields);
-			contentImporterForm.setFilePath((String) properties.get("filePath"));
-			contentImporterForm.setReportEmail((String) properties.get("reportEmail"));
-			contentImporterForm.setCsvSeparatorDelimiter((String) properties.get("csvSeparatorDelimiter"));
-			contentImporterForm.setCsvTextDelimiter((String) properties.get("csvTextDelimiter"));			
-			contentImporterForm.setLanguage((Long.parseLong((String) properties.get("language"))));
-			contentImporterForm.setHaveCronExpression((Boolean) properties.get("haveCronExpression"));
+			contentExporterForm.setFields(fields);
+			contentExporterForm.setFilePath((String) properties.get("filePath"));
+			contentExporterForm.setOverWriteFile((Boolean) properties.get("overWriteFile"));
+			contentExporterForm.setReportEmail((String) properties.get("reportEmail"));
+			contentExporterForm.setCsvSeparatorDelimiter((String) properties.get("csvSeparatorDelimiter"));
+			contentExporterForm.setCsvTextDelimiter((String) properties.get("csvTextDelimiter"));			
+			contentExporterForm.setLanguage((Long.parseLong((String) properties.get("language"))));
+			contentExporterForm.setHaveCronExpression((Boolean) properties.get("haveCronExpression"));
 
-			if (UtilMethods.isSet(properties.get("publishContent")))
-				contentImporterForm.setPublishContent(new Boolean((String) properties.get("publishContent")));
-
-			contentImporterForm.setNewForm(false);
+			contentExporterForm.setNewForm(false);
 		} catch (Exception e) {
 			Logger.warn(this, e.getMessage());
 		}

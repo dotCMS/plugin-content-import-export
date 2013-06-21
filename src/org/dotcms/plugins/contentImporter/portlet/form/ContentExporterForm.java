@@ -2,41 +2,80 @@ package org.dotcms.plugins.contentImporter.portlet.form;
 
 import com.dotmarketing.portlets.scheduler.struts.SchedulerForm;
 
-public class ContentImporterForm extends SchedulerForm {
+/**
+ * Form to manage the export job schedule
+ * @author Oswaldo
+ *
+ */
+public class ContentExporterForm extends SchedulerForm {
 
     private static final long serialVersionUID = 1L;
 
 	/** identifier field */    
 	
 	private String structure = "";
-	private long language = 0;
+	private long language = -1;
 	private String[] fields = new String[0];
 	private String filePath;
+	private boolean overWriteFile=false;
 	private String reportEmail;
 	private String csvSeparatorDelimiter;
 	private String csvTextDelimiter;
-	private boolean publishContent;
-	private boolean newForm;
 	private String cronExpression;
 	private boolean haveCronExpression;
 	
+	
+	/**
+	 * Indicates if the current file should be overwritten
+	 * @return boolean
+	 */
+	public boolean isOverWriteFile() {
+		return overWriteFile;
+	}
+
+	/**
+	 * Set if the current file should be overwritten
+	 * @param overWriteFile
+	 */
+	public void setOverWriteFile(boolean overWriteFile) {
+		this.overWriteFile = overWriteFile;
+	}
+
+	/**
+	 * Indicate if a cron expression was set
+	 * @return boolean
+	 */
 	public boolean isHaveCronExpression() {
 		return haveCronExpression;
 	}
 
+	/**
+	 * set if a cron expression was set
+	 * @param haveCronExpression
+	 */
 	public void setHaveCronExpression(boolean haveCronExpression) {
 		this.haveCronExpression = haveCronExpression;
 	}
 
+	/**
+	 * get the specified cron expressions
+	 * @return String
+	 */
 	public String getCronExpression() {
 		return cronExpression;
 	}
 
+	/**
+	 * set the specified cron expressions
+	 * @return String
+	 */
 	public void setCronExpression(String cronExpression) {
 		this.cronExpression = cronExpression;
 	}
-	
-	public ContentImporterForm() {
+
+	private boolean newForm;
+		
+	public ContentExporterForm() {
 		super();
 		this.newForm = true;
 	}
@@ -111,21 +150,7 @@ public class ContentImporterForm extends SchedulerForm {
 		this.csvTextDelimiter = csvTextDelimiter;
 	}
 
-	/**
-	 * @return the publishContent
-	 */
-	public boolean isPublishContent() {
-		return publishContent;
-	}
-
-	/**
-	 * @param publishContent the publishContent to set
-	 */
-	public void setPublishContent(boolean publishContent) {
-		this.publishContent = publishContent;
-	}
-
-    public String[] getFields() {
+	public String[] getFields() {
         return fields;
     }
 
@@ -148,4 +173,5 @@ public class ContentImporterForm extends SchedulerForm {
     public void setLanguage(long language) {
         this.language = language;
     }
+
 }

@@ -6,17 +6,11 @@
 	<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
 	<init-param>
 		<name>view-action</name>
-		<value>/ext/content_importer/view_jobs</value>
+		<value>/ext/content_importer/view_export_jobs</value>
 	</init-param>
 	<expiration-cache>0</expiration-cache>
 	<supports>
 		<mime-type>text/html</mime-type>
 	</supports>
 	<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-	<security-role-ref>
-		<role-name>CMS Administrator</role-name>
-	</security-role-ref>
-	<security-role-ref>
-		<role-name>Content Importer</role-name>
-	</security-role-ref>
 </portlet>
