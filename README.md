@@ -93,5 +93,9 @@ If you are going to generate a new task, you need to enter:
 
 10. The CSV Text Delimiter. This is if you use a " or ' or other symbol to indicate when a text end.
 
-11.  The Publish property. Check it only if you want the process automatically publish the content that will be imported.
+11. The Publish property. Check it only if you want the process automatically publish the content that will be imported.
+
+12. The Override existing content version? property. Check it, if you want that the import process don't generate a new version of the existing content.
+
+13. The Delete structure contents? property. Check it, if you want to delete all the contents in the structure before doing the import.
 
