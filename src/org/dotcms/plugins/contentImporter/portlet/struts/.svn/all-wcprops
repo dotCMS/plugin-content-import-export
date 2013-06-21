@@ -1,0 +1,17 @@
+K 25
+svn:wc:ra_dav:version-url
+V 122
+/!svn/ver/22597/plugin/1.7/org.dotcms.plugins.contentImporter/stable/src/org/dotcms/plugins/contentImporter/portlet/struts
+END
+ViewContentImporterJobsAction.java
+K 25
+svn:wc:ra_dav:version-url
+V 157
+/!svn/ver/21397/plugin/1.7/org.dotcms.plugins.contentImporter/stable/src/org/dotcms/plugins/contentImporter/portlet/struts/ViewContentImporterJobsAction.java
+END
+EditContentImporterJobAction.java
+K 25
+svn:wc:ra_dav:version-url
+V 156
+/!svn/ver/22597/plugin/1.7/org.dotcms.plugins.contentImporter/stable/src/org/dotcms/plugins/contentImporter/portlet/struts/EditContentImporterJobAction.java
+END
