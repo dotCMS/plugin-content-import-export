@@ -1,1 +1,0 @@
-<%@ include file="/html/plugins/org.dotcms.plugins.contentImporter/view_jobs.jsp" %>

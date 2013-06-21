@@ -1,2 +1,0 @@
-<!-- Use this file to add portlets and extend the portlet file -->
-<portlet id="EXT_STRUTS_CONTENT_IMPORT" struts-path="ext/content_importer" narrow="true" />

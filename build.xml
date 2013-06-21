@@ -1,3 +1,0 @@
-<project name="Content Importer" default="build">	
-	<import file="../common.xml"/>	
-</project>

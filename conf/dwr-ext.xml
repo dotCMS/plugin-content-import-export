@@ -1,3 +1,0 @@
-<create creator="new" javascript="ContentExporterAjax" scope="request">
-      <param name="class" value="org.dotcms.plugins.contentImporter.portlet.ajax.ContentExporterAjax"/>
-</create>
