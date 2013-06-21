@@ -1,4 +1,0 @@
-javax.portlet.title.EXT_STRUTS_CONTENT_IMPORT=Content Import
-message.content.importer.structure.required=An structure must be selected
-message.content.importer.file.path.required=The File Path is required
-message.content.importer.identifier.field.name.required=The Identifier Field Name is required
