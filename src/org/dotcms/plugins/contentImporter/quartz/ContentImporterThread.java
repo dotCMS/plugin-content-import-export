@@ -93,7 +93,9 @@ public class ContentImporterThread implements Job {
 				csvTextDelimiter = "" + csvTextDelimiter.trim().charAt(0);
 
 			boolean publishContent = new Boolean((String) properties.get("publishContent"));
-
+			boolean deleteAllContent = new Boolean((String) properties.get("deleteAllContent"));
+			boolean saveWithoutVersions = new Boolean((String) properties.get("saveWithoutVersions"));
+			
 			HashMap<String, List<String>> results = new HashMap<String, List<String>>();
 			results.put("warnings", new ArrayList<String>());
 			results.put("errors", new ArrayList<String>());
@@ -152,7 +154,10 @@ public class ContentImporterThread implements Job {
 						if (csvreader.readHeaders()) 
 						{	        			
 							ContentletUtil contentletUtil = new ContentletUtil(reader, csvreader);
-							results = contentletUtil.importFile(structure, fields, false, user, isMultilanguage, language,publishContent);
+							if(deleteAllContent){
+								contentletUtil.deleteAllContent(structure, user);
+							}
+							results = contentletUtil.importFile(structure, fields, false, user, isMultilanguage, language,publishContent,saveWithoutVersions);
 						}	        			        	
 					} catch (Exception e) {
 						((List<String>) results.get("errors")).add("Exception: " + e.toString());

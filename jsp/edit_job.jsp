@@ -391,6 +391,16 @@ function submitParent() {
 			document.getElementById("cronDiv").style.display="none";
 		}
 	}
+	
+	function confirmDeLete(elem){
+		if(elem.checked){
+			var retVal = confirm("<%=LanguageUtil.get(pageContext,"content-importer-delete-all-content-alert")%>");
+		   	if( retVal == false ){
+		   		elem.checked=false;
+		   		elem.focus();
+		   	}
+		}
+	}
 </script>
 
 <html:form action="/ext/content_importer/edit_job" styleId="fm">
@@ -987,6 +997,15 @@ function submitParent() {
 				<br/><em><%=LanguageUtil.get(pageContext,"content-importer-publish-content-hint")%></em>
 			</dt>
 			<dd><input type="checkbox" class="form-text" dojoType="dijit.form.CheckBox" name="publishContent" id="publishContent" value="true" <%= contentImporterForm.isPublishContent() ? "checked" : "" %> ></dd>
+			<dt><%=LanguageUtil.get(pageContext,"content-importer-save-content-without-versions")%>:
+				<br/><em><%=LanguageUtil.get(pageContext,"content-importer-save-content-without-versions-hint")%></em>
+			</dt>
+			<dd><br/><input type="checkbox" class="form-text" dojoType="dijit.form.CheckBox" name="saveWithoutVersions" id="saveWithoutVersions" value="true" <%= contentImporterForm.isSaveWithoutVersions() ? "checked" : "" %> ></dd>
+			<dt><%=LanguageUtil.get(pageContext,"content-importer-delete-all-content")%>:
+				<br/><em><%=LanguageUtil.get(pageContext,"content-importer-delete-all-content-hint")%></em>
+			</dt>
+			<dd><br/><br/><input type="checkbox" class="form-text" dojoType="dijit.form.CheckBox" onclick="confirmDeLete(this)" name="deleteAllContent" id="deleteAllContent" value="true" <%= contentImporterForm.isDeleteAllContent() ? "checked" : "" %> ></dd>
+			
 		</dl>
 
 	</div>

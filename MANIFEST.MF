@@ -1,5 +1,5 @@
 Manifest-Version: 1.0
 Deploy-Class: org.dotcms.plugins.contentImporter.deployer.ContentImporterPluginDeployer
 Plugin-Name: Content Importer for dotCMS 2.x Versions
-Plugin-Version: 1.0
+Plugin-Version: 2.0
 Author: dotCMS

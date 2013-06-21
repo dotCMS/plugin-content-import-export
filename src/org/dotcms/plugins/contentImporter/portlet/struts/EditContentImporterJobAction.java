@@ -343,6 +343,16 @@ public class EditContentImporterJobAction extends DotPortletAction {
 			properties.put("publishContent", "true");
 		else
 			properties.put("publishContent", "false");
+		
+		if (contentImporterForm.isDeleteAllContent())
+			properties.put("deleteAllContent", "true");
+		else
+			properties.put("deleteAllContent", "false");
+		
+		if (contentImporterForm.isSaveWithoutVersions())
+			properties.put("saveWithoutVersions", "true");
+		else
+			properties.put("saveWithoutVersions", "false");
 
 		properties.put("haveCronExpression", contentImporterForm.isHaveCronExpression());
 
@@ -717,7 +727,14 @@ public class EditContentImporterJobAction extends DotPortletAction {
 
 			if (UtilMethods.isSet(properties.get("publishContent")))
 				contentImporterForm.setPublishContent(new Boolean((String) properties.get("publishContent")));
+			 
+			if (UtilMethods.isSet(properties.get("saveWithoutVersions")))
+				contentImporterForm.setSaveWithoutVersions(new Boolean((String) properties.get("saveWithoutVersions")));
 
+			if (UtilMethods.isSet(properties.get("deleteAllContent")))
+				contentImporterForm.setDeleteAllContent(new Boolean((String) properties.get("deleteAllContent")));
+
+			
 			contentImporterForm.setNewForm(false);
 		} catch (Exception e) {
 			Logger.warn(this, e.getMessage());

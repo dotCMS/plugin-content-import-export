@@ -19,19 +19,67 @@ public class ContentImporterForm extends SchedulerForm {
 	private boolean newForm;
 	private String cronExpression;
 	private boolean haveCronExpression;
+	private boolean saveWithoutVersions;
+	private boolean deleteAllContent;
 	
+	/**
+	 * Indicate if the save without version checkbox was set
+	 * @return true if is set, false if not
+	 */
+	public boolean isSaveWithoutVersions() {
+		return saveWithoutVersions;
+	}
+
+	/**
+	 * Set the value of the save without version flag
+	 * @param saveWithoutVersions
+	 */
+	public void setSaveWithoutVersions(boolean saveWithoutVersions) {
+		this.saveWithoutVersions = saveWithoutVersions;
+	}
+
+	/**
+	 * Indicate if the delete all structure content checkbox was set
+	 * @return true if is set, false if not
+	 */
+	public boolean isDeleteAllContent() {
+		return deleteAllContent;
+	}
+
+	/**
+	 * Set the value of the dele all content flag
+	 * @param deleteAllContent
+	 */
+	public void setDeleteAllContent(boolean deleteAllContent) {
+		this.deleteAllContent = deleteAllContent;
+	}
+
+	/**
+	 * Indicate if a cron expression was set
+	 * @return true is a cron expression was set, false if not
+	 */
 	public boolean isHaveCronExpression() {
 		return haveCronExpression;
 	}
 
+	/**
+	 * Update the variable that shows if a cron expresion was set or not
+	 * @param haveCronExpression
+	 */
 	public void setHaveCronExpression(boolean haveCronExpression) {
 		this.haveCronExpression = haveCronExpression;
 	}
 
+	/**
+	 * Get the cron expression field
+	 */
 	public String getCronExpression() {
 		return cronExpression;
 	}
 
+	/**
+	 * Set the cron expresion field
+	 */
 	public void setCronExpression(String cronExpression) {
 		this.cronExpression = cronExpression;
 	}

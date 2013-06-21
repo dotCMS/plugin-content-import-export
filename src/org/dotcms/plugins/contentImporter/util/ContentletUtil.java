@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.csvreader.CsvReader;
@@ -25,15 +26,12 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.model.ContentletSearch;
-import com.dotmarketing.common.reindex.ReindexThread;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil;
 import com.dotmarketing.portlets.contentlet.action.ImportContentletsAction;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
@@ -58,7 +56,6 @@ import com.dotmarketing.util.ImportUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.ImportUtil.Counters;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
@@ -107,10 +104,10 @@ public class ContentletUtil {
 	private Reader reader;
 	private CsvReader csvreader;
 	private String[] csvHeaders;	
-	
+
 	static int languageCodeHeaderColumn = -1;
 	static int countryCodeHeaderColumn = -1;
-	
+
 	private static final SimpleDateFormat DATE_FIELD_FORMAT = new SimpleDateFormat("yyyyMMdd");
 	public static final String DOTSCHEDULER_DATE = "EEE MMM d hh:mm:ss z yyyy";
 
@@ -130,9 +127,9 @@ public class ContentletUtil {
 		}
 	}
 
-	public HashMap<String, List<String>> importFile(String structure, String[] keyfields, boolean preview,User user,boolean isMultilingual, long language,boolean publishContent)
-	throws DotRuntimeException, DotDataException 
-	{
+	public HashMap<String, List<String>> importFile(String structure, String[] keyfields, boolean preview,User user,boolean isMultilingual, long language,boolean publishContent, boolean saveWithoutVersions)
+			throws DotRuntimeException, DotDataException 
+			{
 		HashMap<String, List<String>> results = new HashMap<String, List<String>>();
 		results.put("warnings", new ArrayList<String>());
 		results.put("errors", new ArrayList<String>());
@@ -172,8 +169,8 @@ public class ContentletUtil {
 			if ((csvHeaders != null) || (csvreader.readHeaders())) {
 
 				//Importing headers from the first file line
-			    HashMap<Integer,Boolean> onlyParent=new HashMap<Integer,Boolean>();
-                HashMap<Integer,Boolean> onlyChild=new HashMap<Integer,Boolean>();
+				HashMap<Integer,Boolean> onlyParent=new HashMap<Integer,Boolean>();
+				HashMap<Integer,Boolean> onlyChild=new HashMap<Integer,Boolean>();
 				if (csvHeaders != null)
 					importHeaders(csvHeaders, st, keyfields, preview, isMultilingual, user, results, headers, keyFields, uniqueFields,relationships,onlyChild,onlyParent);
 				else
@@ -197,17 +194,17 @@ public class ContentletUtil {
 							Logger.debug(ImportUtil.class, "Line " + lines + ": (" + csvreader.getRawRecord() + ").");
 							//Importing a line
 							if (0 < language) {
-//								results.get("identifiers").add(csvLine[0]);
+								//								results.get("identifiers").add(csvLine[0]);
 								importLine(csvLine, st, preview, isMultilingual, user, results, lineNumber, language, headers, keyFields, choosenKeyField,
-										counters, keyContentUpdated, structurePermissions, uniqueFieldBeans, uniqueFields,relationships,onlyChild,onlyParent,publishContent);
+										counters, keyContentUpdated, structurePermissions, uniqueFieldBeans, uniqueFields,relationships,onlyChild,onlyParent,publishContent, saveWithoutVersions);
 							} else {
 
 								dotCMSLanguage = langAPI.getLanguage(csvLine[languageCodeHeaderColumn], csvLine[countryCodeHeaderColumn]);
 
 								if (0 < dotCMSLanguage.getId()) {
-//									results.get("identifiers").add(csvLine[0]);
+									//									results.get("identifiers").add(csvLine[0]);
 									importLine(csvLine, st, preview, isMultilingual, user, results, lineNumber, dotCMSLanguage.getId(), headers, keyFields, choosenKeyField,
-											counters, keyContentUpdated, structurePermissions, uniqueFieldBeans , uniqueFields,relationships,onlyChild,onlyParent,publishContent);
+											counters, keyContentUpdated, structurePermissions, uniqueFieldBeans , uniqueFields,relationships,onlyChild,onlyParent,publishContent, saveWithoutVersions);
 								} else {
 									results.get("errors").add(LanguageUtil.get(user, "Line--" ) + lineNumber + LanguageUtil.get(user, "Locale-not-found-for-languageCode" )+" ='" + csvLine[languageCodeHeaderColumn] + "' countryCode='" + csvLine[countryCodeHeaderColumn] + "'");
 									errors++;
@@ -235,9 +232,9 @@ public class ContentletUtil {
 
 					if(!preview){
 						results.get("counters").add("linesread="+lines);
-					    results.get("counters").add("errors="+errors);
-					    results.get("counters").add("newContent="+counters.getNewContentCounter());
-					    results.get("counters").add("contentToUpdate="+counters.getContentToUpdateCounter());
+						results.get("counters").add("errors="+errors);
+						results.get("counters").add("newContent="+counters.getNewContentCounter());
+						results.get("counters").add("contentToUpdate="+counters.getContentToUpdateCounter());
 						HibernateUtil.commitTransaction();
 					}
 
@@ -280,7 +277,7 @@ public class ContentletUtil {
 		Logger.info(ImportUtil.class, lines + " lines read correctly. " + errors + " errors found.");
 
 		return results;
-	}
+			}
 
 	private static void importHeaders(String[] headerLine, Structure structure, String[] keyFieldsInodes, boolean preview, boolean isMultilingual, User user, HashMap<String, List<String>> results, HashMap<Integer, Field> headers, HashMap<Integer, Field> keyFields, List<Field> uniqueFields, HashMap<Integer, Relationship> relationships,HashMap<Integer,Boolean> onlyChild, HashMap<Integer,Boolean> onlyParent) throws Exception  {
 
@@ -291,25 +288,25 @@ public class ContentletUtil {
 		List<Relationship> structureRelationships = RelationshipFactory.getAllRelationshipsByStructure(structure);
 		List<String> requiredFields = new ArrayList<String>();
 		List<String> headerFields = new ArrayList<String>();
-		
+
 		for(Field field:fields){
 			if(field.isRequired()){
 				requiredFields.add(field.getFieldName());
 			}
 		}
-		
+
 		for (int i = 0; i < headerLine.length; ++i) {
 			if (headerLine[i].equals(languageCodeHeader))
 				languageCodeHeaderColumn = i;
 			if (headerLine[i].equals(countryCodeHeader))
 				countryCodeHeaderColumn = i;
-				
+
 			if ((-1 < languageCodeHeaderColumn) && (-1 < countryCodeHeaderColumn))
 				break;
 		}
 
 		for (int i = 0; i < headerLine.length; i++) {
-			
+
 			boolean found = false;
 			String header = headerLine[i].replaceAll("'", "");
 
@@ -329,7 +326,7 @@ public class ContentletUtil {
 						results.get("warnings").add(
 								LanguageUtil.get(user, "Header")+": \"" + header
 
-								 +"\" "+ LanguageUtil.get(user, "matches-a-field-of-type-button-this-column-of-data-will-be-ignored"));
+								+"\" "+ LanguageUtil.get(user, "matches-a-field-of-type-button-this-column-of-data-will-be-ignored"));
 					}
 					else if (field.getFieldType().equals(Field.FieldType.BINARY.toString())){
 						found = true;
@@ -362,23 +359,23 @@ public class ContentletUtil {
 			}
 
 			/*
-             * http://jira.dotmarketing.net/browse/DOTCMS-6409
-             * We gonna delete -RELPARENT -RELCHILD so we can
-             * search for the relation name. No problem as
-             * we put relationships.put(i,relationship) instead
-             * of header.
-             */
-            boolean onlyP=false;
-            if(header.endsWith("-RELPARENT")) {
-                header = header.substring(0,header.lastIndexOf("-RELPARENT"));
-                onlyP=true;
-            }
+			 * http://jira.dotmarketing.net/browse/DOTCMS-6409
+			 * We gonna delete -RELPARENT -RELCHILD so we can
+			 * search for the relation name. No problem as
+			 * we put relationships.put(i,relationship) instead
+			 * of header.
+			 */
+			boolean onlyP=false;
+			if(header.endsWith("-RELPARENT")) {
+				header = header.substring(0,header.lastIndexOf("-RELPARENT"));
+				onlyP=true;
+			}
 
-            boolean onlyCh=false;
-            if(header.endsWith("-RELCHILD")) {
-                header = header.substring(0,header.lastIndexOf("-RELCHILD"));
-                onlyCh=true;
-            }
+			boolean onlyCh=false;
+			if(header.endsWith("-RELCHILD")) {
+				header = header.substring(0,header.lastIndexOf("-RELCHILD"));
+				onlyCh=true;
+			}
 
 			//Check if the header is a relationship
 			for(Relationship relationship : structureRelationships)
@@ -388,11 +385,11 @@ public class ContentletUtil {
 					found = true;
 					relationships.put(i,relationship);
 					onlyParent.put(i, onlyP);
-                    onlyChild.put(i, onlyCh);
+					onlyChild.put(i, onlyCh);
 
-                    // special case when the relationship has the same structure for parent and child, set only as child
-                    if(relationship.getChildStructureInode().equals(relationship.getParentStructureInode()) && !onlyCh && !onlyP)
-                        onlyChild.put(i, true);
+					// special case when the relationship has the same structure for parent and child, set only as child
+					if(relationship.getChildStructureInode().equals(relationship.getParentStructureInode()) && !onlyCh && !onlyP)
+						onlyChild.put(i, true);
 				}
 			}
 
@@ -403,7 +400,7 @@ public class ContentletUtil {
 			}
 		}
 
-        requiredFields.removeAll(headerFields);
+		requiredFields.removeAll(headerFields);
 
 		for(String requiredField: requiredFields){
 			results.get("errors").add(LanguageUtil.get(user, "Field")+": \"" + requiredField+ "\" "+LanguageUtil.get(user, "required-field-not-found-in-header"));
@@ -452,7 +449,7 @@ public class ContentletUtil {
 				results
 				.get("messages")
 				.add(
-				LanguageUtil.get(user, "No-headers-found-on-the-file-that-match-any-of-the-structure-fields"));
+						LanguageUtil.get(user, "No-headers-found-on-the-file-that-match-any-of-the-structure-fields"));
 			results
 			.get("warnings")
 			.add(LanguageUtil.get(user, "Not-all-the-structure-fields-were-matched-against-the-file-headers-Some-content-fields-could-be-left-empty"));
@@ -460,13 +457,13 @@ public class ContentletUtil {
 		//Adding the relationship messages
 		if(relationships.size() > 0)
 		{
-		results.get("messages").add(LanguageUtil.get(user,  relationships.size() + " "+LanguageUtil.get(user, "relationship-match-these-will-be-imported")));
+			results.get("messages").add(LanguageUtil.get(user,  relationships.size() + " "+LanguageUtil.get(user, "relationship-match-these-will-be-imported")));
 		}
 	}
 
 	private static void importLine(String[] line, Structure structure, boolean preview, boolean isMultilingual, User user, HashMap<String, List<String>> results, int lineNumber, long language,
 			HashMap<Integer, Field> headers, HashMap<Integer, Field> keyFields, StringBuffer choosenKeyField, Counters counters,
-			HashSet<String> keyContentUpdated, List<Permission> structurePermissions, List<UniqueFieldBean> uniqueFieldBeans, List<Field> uniqueFields,HashMap<Integer,Relationship> relationships,HashMap<Integer,Boolean> onlyChild,HashMap<Integer,Boolean> onlyParent,boolean publishContent) throws DotRuntimeException {
+			HashSet<String> keyContentUpdated, List<Permission> structurePermissions, List<UniqueFieldBean> uniqueFieldBeans, List<Field> uniqueFields,HashMap<Integer,Relationship> relationships,HashMap<Integer,Boolean> onlyChild,HashMap<Integer,Boolean> onlyParent,boolean publishContent, boolean saveWithoutVersions) throws DotRuntimeException {
 		try {			
 			//Building a values HashMap based on the headers/columns position			
 			//Building a values HashMap based on the headers/columns position
@@ -477,7 +474,7 @@ public class ContentletUtil {
 				Field field = headers.get(column);
 				if (line.length < column) {
 					throw new DotRuntimeException("Incomplete line found, the line #" + lineNumber +
-					" doesn't contain all the required columns.");
+							" doesn't contain all the required columns.");
 				}
 				String value = line[column];
 				Object valueObj = value;
@@ -534,7 +531,7 @@ public class ContentletUtil {
 						field.getFieldType().equals(Field.FieldType.SELECT.toString()) ||
 						field.getFieldType().equals(Field.FieldType.MULTI_SELECT.toString()) ||
 						field.getFieldType().equals(Field.FieldType.RADIO.toString())
-				) {
+						) {
 					valueObj = value;
 					if(UtilMethods.isSet(value))
 					{
@@ -575,9 +572,9 @@ public class ContentletUtil {
 						valueObj = value;
 						headersIncludeHostField = true;
 					}else{
-							throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getFieldName() +
-									", value: " + value + ", invalid host/folder inode found, line will be ignored.");
-				    }
+						throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getFieldName() +
+								", value: " + value + ", invalid host/folder inode found, line will be ignored.");
+					}
 				}else if(field.getFieldType().equals(Field.FieldType.IMAGE.toString()) || field.getFieldType().equals(Field.FieldType.FILE.toString())) {
 					String filePath = value;
 					if(field.getFieldType().equals(Field.FieldType.IMAGE.toString()) && !UtilMethods.isImage(filePath))
@@ -657,7 +654,7 @@ public class ContentletUtil {
 			}
 
 			HashMap<Relationship,List<Contentlet>> csvRelationshipRecordsParentOnly = new HashMap<Relationship,List<Contentlet>>();
-            HashMap<Relationship,List<Contentlet>> csvRelationshipRecordsChildOnly = new HashMap<Relationship,List<Contentlet>>();
+			HashMap<Relationship,List<Contentlet>> csvRelationshipRecordsChildOnly = new HashMap<Relationship,List<Contentlet>>();
 			HashMap<Relationship,List<Contentlet>> csvRelationshipRecords = new HashMap<Relationship,List<Contentlet>>();
 			for (Integer column : relationships.keySet()) {
 				Relationship relationship = relationships.get(column);
@@ -697,12 +694,12 @@ public class ContentletUtil {
 				if(!error)
 				{
 					//If no error add the relatedContentlets
-				    if(onlyChild.get(column))
-                        csvRelationshipRecordsChildOnly.put(relationship, relatedContentlets);
-                    else if(onlyParent.get(column))
-                        csvRelationshipRecordsParentOnly.put(relationship, relatedContentlets);
-                    else
-                        csvRelationshipRecords.put(relationship, relatedContentlets);
+					if(onlyChild.get(column))
+						csvRelationshipRecordsChildOnly.put(relationship, relatedContentlets);
+					else if(onlyParent.get(column))
+						csvRelationshipRecordsParentOnly.put(relationship, relatedContentlets);
+					else
+						csvRelationshipRecords.put(relationship, relatedContentlets);
 				}
 				else
 				{
@@ -763,10 +760,10 @@ public class ContentletUtil {
 						if(field.getFieldType().equals(Field.FieldType.DATE.toString())){
 							text = DATE_FIELD_FORMAT.format((Date)value);
 						}else if(field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())){
-						    DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
+							DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
 							text = df.format((Date)value);
-					    }else if(field.getFieldType().equals(Field.FieldType.TIME.toString())) {
-					        DateFormat df = new SimpleDateFormat("HHmmss");
+						}else if(field.getFieldType().equals(Field.FieldType.TIME.toString())) {
+							DateFormat df = new SimpleDateFormat("HHmmss");
 							text =  df.format((Date)value);
 						} else {
 							formatter = new SimpleDateFormat();
@@ -819,7 +816,7 @@ public class ContentletUtil {
 									|| field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())
 									|| field.getFieldType().equals(Field.FieldType.TIME.toString())){
 								if(field.getFieldType().equals(Field.FieldType.TIME.toString())){
-								    DateFormat df = new SimpleDateFormat("HHmmss");
+									DateFormat df = new SimpleDateFormat("HHmmss");
 									conValue = df.format((Date)conValue);
 									value = df.format((Date)value);
 								}else if(field.getFieldType().equals(Field.FieldType.DATE.toString())){
@@ -829,7 +826,7 @@ public class ContentletUtil {
 									if(conValue instanceof java.sql.Timestamp){
 										value = new java.sql.Timestamp(((Date)value).getTime());
 									}else if(conValue instanceof Date){
-									    DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
+										DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
 										value = df.format((Date)value);
 									}
 								}
@@ -849,7 +846,7 @@ public class ContentletUtil {
 							}
 						}
 						if(columnExists)
-						  contentlets.add(con);
+							contentlets.add(con);
 					}
 				}
 			}
@@ -904,12 +901,12 @@ public class ContentletUtil {
 					if (contentlets.size() == 1) {//DOTCMS-5204
 						results.get("warnings").add(
 								LanguageUtil.get(user, "Line--") + lineNumber + ". "+ LanguageUtil.get(user, "The-key-fields-chosen-match-one-existing-content(s)")+" - "
-								+ LanguageUtil.get(user, "more-than-one-match-suggests-key(s)-are-not-properly-unique"));
+										+ LanguageUtil.get(user, "more-than-one-match-suggests-key(s)-are-not-properly-unique"));
 					}else if (contentlets.size() > 1) {
 						results.get("warnings").add(
 								LanguageUtil.get(user, "Line--") + lineNumber + ". "+ LanguageUtil.get(user, "The-key-fields-choosen-match-more-than-one-content-in-this-case")+": "
-								+ " "+ LanguageUtil.get(user, "matches")+": " + contentlets.size() + " " +LanguageUtil.get(user, "different-content-s-looks-like-the-key-fields-choosen")+" " +
-								LanguageUtil.get(user, "aren-t-a-real-key"));
+										+ " "+ LanguageUtil.get(user, "matches")+": " + contentlets.size() + " " +LanguageUtil.get(user, "different-content-s-looks-like-the-key-fields-choosen")+" " +
+										LanguageUtil.get(user, "aren-t-a-real-key"));
 					}
 				}
 			}
@@ -1056,10 +1053,10 @@ public class ContentletUtil {
 							int count = 0;
 							for(Field field : fields){
 								if(count>0){
-								   sb.append(", ");
+									sb.append(", ");
 								}
 								sb.append(field.getFieldName());
-							    count++;
+								count++;
 							}
 							sb.append("\n");
 						}
@@ -1069,27 +1066,40 @@ public class ContentletUtil {
 					//If not preview save the contentlet
 					if (!preview)
 					{
-						cont.setInode(null);
+						if(!saveWithoutVersions){
+							cont.setInode(null);
+						}
 						cont.setLowIndexPriority(true);
 						//Load the old relationShips and add the new ones
 						ContentletRelationships contentletRelationships = conAPI.getAllRelationships(cont);
 						List<ContentletRelationships.ContentletRelationshipRecords> relationshipRecords = contentletRelationships.getRelationshipsRecords();
+						Map<Relationship,List<Contentlet>> relations = new HashMap<Relationship,List<Contentlet>>();
 						for(ContentletRelationships.ContentletRelationshipRecords relationshipRecord : relationshipRecords) {
-                            List<Contentlet> csvRelatedContentlet = csvRelationshipRecords.get(relationshipRecord.getRelationship());
-                            if(UtilMethods.isSet(csvRelatedContentlet)) {
-                                relationshipRecord.getRecords().addAll(csvRelatedContentlet);
-                            }
-                            csvRelatedContentlet = csvRelationshipRecordsChildOnly.get(relationshipRecord.getRelationship());
-                            if(UtilMethods.isSet(csvRelatedContentlet) && relationshipRecord.isHasParent()) {
-                                relationshipRecord.getRecords().addAll(csvRelatedContentlet);
-                            }
-                            csvRelatedContentlet = csvRelationshipRecordsParentOnly.get(relationshipRecord.getRelationship());
-                            if(UtilMethods.isSet(csvRelatedContentlet) && !relationshipRecord.isHasParent()) {
-                                relationshipRecord.getRecords().addAll(csvRelatedContentlet);
-                            }
-                        }
+							List<Contentlet> csvRelatedContentlet = csvRelationshipRecords.get(relationshipRecord.getRelationship());
+							if(saveWithoutVersions){
+								if(UtilMethods.isSet(csvRelatedContentlet)) {
+									relations.put(relationshipRecord.getRelationship(), csvRelatedContentlet);
+								}
+							}else{
+								if(UtilMethods.isSet(csvRelatedContentlet)) {
+									relationshipRecord.getRecords().addAll(csvRelatedContentlet);
+								}
+								csvRelatedContentlet = csvRelationshipRecordsChildOnly.get(relationshipRecord.getRelationship());
+								if(UtilMethods.isSet(csvRelatedContentlet) && relationshipRecord.isHasParent()) {
+									relationshipRecord.getRecords().addAll(csvRelatedContentlet);
+								}
+								csvRelatedContentlet = csvRelationshipRecordsParentOnly.get(relationshipRecord.getRelationship());
+								if(UtilMethods.isSet(csvRelatedContentlet) && !relationshipRecord.isHasParent()) {
+									relationshipRecord.getRecords().addAll(csvRelatedContentlet);
+								}
+							}
+						}
 						//END Load the old relationShips and add the new ones
-						cont = conAPI.checkin(cont,contentletRelationships, new ArrayList<Category>(categories), structurePermissions, user, false);
+						if(!isNew && saveWithoutVersions){
+							cont = conAPI.checkinWithoutVersioning(cont, relations, new ArrayList<Category>(categories), structurePermissions, user, false);
+						}else{
+							cont = conAPI.checkin(cont,contentletRelationships, new ArrayList<Category>(categories), structurePermissions, user, false);
+						}
 						APILocator.getVersionableAPI().setWorking(cont);
 						if(publishContent){
 							APILocator.getVersionableAPI().setLive(cont);
@@ -1157,6 +1167,26 @@ public class ContentletUtil {
 			Logger.error(ImportUtil.class,e.getMessage(),e);
 			throw new DotRuntimeException(e.getMessage());
 		}
+	}
+
+	/**
+	 * This method drop all the content associated to this structure
+	 * @param struture structure ID
+	 * @param user User with permission
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public void deleteAllContent(String struture, User user) throws DotSecurityException, DotDataException{
+		int limit = 200;
+		int offset = 0;
+		ContentletAPI conAPI=APILocator.getContentletAPI();
+		List<Contentlet> contentlets=null;
+		Structure st = StructureCache.getStructureByInode (struture);
+		do {
+			contentlets = conAPI.findByStructure(st, user, false, limit, offset);
+			conAPI.delete(contentlets, user, false);
+		} while(contentlets.size()>0);
+		conAPI.refresh(st);
 	}
 
 	public static final String[] IMP_DATE_FORMATS = new String[] { "d-MMM-yy", "MMM-yy", "MMMM-yy", "d-MMM", "dd-MMM-yyyy", 
@@ -1278,7 +1308,7 @@ public class ContentletUtil {
 			this.contentUpdatedDuplicated = contentUpdatedDuplicated;
 		}
 	}
-	
+
 	private static class UniqueFieldBean {
 
 		private Field field;

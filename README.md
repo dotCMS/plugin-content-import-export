@@ -6,6 +6,12 @@ This plugin allows the configuration of a quartz job to import and export conten
 The plugin contains a portlet that shows the queue of content to be imported and exported in separated list. 
 Also the portlet allows you to add, edit and remove import/export quartz jobs.
 
+This version include two new options in the import process:
+
+1. Update existing contents without generating new versions.
+
+2. Delete all the existing contents in the structure before running the import.
+
 
 Important:
 =========
