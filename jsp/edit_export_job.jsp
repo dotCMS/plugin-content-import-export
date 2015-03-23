@@ -1,5 +1,5 @@
 <%@page import="org.dotcms.plugins.contentImporter.util.ContentletUtil"%>
-<%@ page import="javax.portlet.WindowState" %>
+<%@ page import="com.dotcms.repackage.javax.portlet.WindowState" %>
 <%@ include file="/html/plugins/org.dotcms.plugins.contentImporter/init.jsp" %>
 <%@ include file="/html/common/messages_inc.jsp" %>
 <%@ page import="java.util.*" %>
@@ -25,7 +25,7 @@
 	java.util.Hashtable params = new java.util.Hashtable();
 	params.put("struts_action", new String [] {"/ext/content_importer/view_export_jobs"} );
 	
-	String referrer = com.dotmarketing.util.PortletURLUtil.getRenderURL(request, javax.portlet.WindowState.MAXIMIZED.toString(), params);
+	String referrer = com.dotmarketing.util.PortletURLUtil.getRenderURL(request, com.dotcms.repackage.javax.portlet.WindowState.MAXIMIZED.toString(), params);
 	
 	List<Structure> structures = StructureFactory.getStructuresWithWritePermissions(user, false);
 	request.setAttribute("structures", structures);
@@ -57,7 +57,7 @@
 <%@page import="com.liferay.util.cal.CalendarUtil"%>
 
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
-<liferay:param name="box_title" value="<%=LanguageUtil.get(pageContext,"Add-Edit-Content-Export-Job") %>" />
+<liferay:param name="box_title" value="<%=LanguageUtil.get(pageContext,\"Add-Edit-Content-Export-Job\") %>" />
 
 <script type='text/javascript' src='/dwr/interface/ContentExporterAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/StructureAjax.js'></script>

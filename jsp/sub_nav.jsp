@@ -1,4 +1,4 @@
-<%@ page import="javax.portlet.WindowState" %>
+<%@ page import="com.dotcms.repackage.javax.portlet.WindowState" %>
 <%@ include file="/html/plugins/org.dotcms.plugins.contentImporter/init.jsp" %>
 
 <script type="text/javascript">

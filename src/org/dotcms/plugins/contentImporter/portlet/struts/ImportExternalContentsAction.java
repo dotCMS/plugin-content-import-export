@@ -18,20 +18,20 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import javax.portlet.ActionRequest;
-import javax.portlet.ActionResponse;
-import javax.portlet.PortletConfig;
+import com.dotcms.repackage.javax.portlet.ActionRequest;
+import com.dotcms.repackage.javax.portlet.ActionResponse;
+import com.dotcms.repackage.javax.portlet.PortletConfig;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import org.dotcms.plugins.contentImporter.portlet.form.ImportExternalContentletsForm;
 import org.dotcms.plugins.contentImporter.util.ContentletUtil;
 
-import com.csvreader.CsvReader;
+import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -642,7 +642,7 @@ public class ImportExternalContentsAction extends DotPortletAction{
 				}
 			}
 			if(!found){
-				results.get("errors").add(contentField+LanguageUtil.get(user, "doesn-t-match-any-structure-field"));
+				results.get("errors").add(contentField+" "+LanguageUtil.get(user, "doesn-t-match-any-structure-field"));
 			}
 		}else {
 			results.get("errors").add(LanguageUtil.get(user, "message.import.external.content.importer.content.required"));
@@ -657,7 +657,7 @@ public class ImportExternalContentsAction extends DotPortletAction{
 				}
 			}
 			if(!found){
-				results.get("errors").add(pathField+LanguageUtil.get(user, "doesn-t-match-any-structure-field"));
+				results.get("errors").add(pathField+" "+LanguageUtil.get(user, "doesn-t-match-any-structure-field"));
 			}
 		}
 

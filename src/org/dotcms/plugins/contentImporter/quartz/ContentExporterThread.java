@@ -163,7 +163,6 @@ public class ContentExporterThread implements Job {
 				}else if(f.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())){
 					if(fields.size()== 0 || fields.contains(f)){
 						pr.print(csvSeparatorDelimiter+csvTextDelimiter+(f.getFieldName().contains(",")?f.getFieldName().replaceAll(",", "&#44;"):f.getFieldName())+csvTextDelimiter);
-						pr.print(csvSeparatorDelimiter+csvTextDelimiter+(f.getFieldName().contains(",")?f.getFieldName().replaceAll(",", "&#44;"):f.getFieldName())+" (Host Name)"+csvTextDelimiter);
 					}
 				}else if(f.getFieldType().equals(Field.FieldType.FILE.toString()) ||
 						f.getFieldType().equals(Field.FieldType.IMAGE.toString()) ||
@@ -180,7 +179,7 @@ public class ContentExporterThread implements Job {
 			}
 
 			pr.print("\r\n");
-			Logger.info(ContentExporterThread.class, "Export Content processing "+contentletsReducedList.size()+"Contentlet(s)");
+			Logger.info(ContentExporterThread.class, "Export Content processing "+contentletsReducedList.size()+" Contentlet(s)");
 			for(ContentletSearch cont :  contentletsReducedList){
 				Contentlet content = conAPI.find(cont.getInode(), user, false);
 				List<Category> catList = (List<Category>) catAPI.getParents(content, user, false);
@@ -293,8 +292,7 @@ public class ContentExporterThread implements Job {
 							text = text.replaceAll("\r","");
 
 							if(f.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())){
-								pr.print(csvSeparatorDelimiter+csvTextDelimiter+text+csvTextDelimiter);								
-								pr.print(csvSeparatorDelimiter+csvTextDelimiter+hostname+csvTextDelimiter);
+								pr.print(csvSeparatorDelimiter+csvTextDelimiter+text+csvTextDelimiter);
 							}else if(f.getFieldType().equals(Field.FieldType.FILE.toString()) || f.getFieldType().equals(Field.FieldType.IMAGE.toString()) ||
 									f.getFieldType().equals(Field.FieldType.BINARY.toString())){
 								pr.print(csvSeparatorDelimiter+csvTextDelimiter+text+csvTextDelimiter);

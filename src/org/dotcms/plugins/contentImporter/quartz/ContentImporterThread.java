@@ -19,7 +19,7 @@ import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
-import com.csvreader.CsvReader;
+import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.plugin.business.PluginAPI;
