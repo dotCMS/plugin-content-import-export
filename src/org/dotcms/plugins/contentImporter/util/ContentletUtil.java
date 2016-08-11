@@ -2,6 +2,7 @@ package org.dotcms.plugins.contentImporter.util;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.io.StringWriter;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -15,11 +16,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.csvreader.CsvReader;
+import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -567,13 +569,59 @@ public class ContentletUtil {
 					//valueObj = UtilMethods.escapeUnicodeCharsForHTML(value);
 				}//http://jira.dotmarketing.net/browse/DOTCMS-3232
 				else if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
-					String identifier = APILocator.getIdentifierAPI().find(value).getInode();
-					if(InodeUtils.isSet(identifier)){
+					Identifier id = null;
+					valueObj = null;
+					try{
+						id = APILocator.getIdentifierAPI().findFromInode(value);
+					}
+					catch(DotStateException dse){
+						Logger.debug(ImportUtil.class, dse.getMessage());
+
+					}
+					
+					if(id != null && InodeUtils.isSet(id.getInode())){
 						valueObj = value;
 						headersIncludeHostField = true;
-					}else{
+					}else if(value.contains("//")){
+						String hostName=null;
+						StringWriter path = null;
+						
+							String[] arr = value.split("/");
+							path = new StringWriter().append("/");
+							
+							
+							for(String y : arr){
+								if(UtilMethods.isSet(y) && hostName == null){
+									hostName = y;
+									
+								}
+								else if(UtilMethods.isSet(y)){
+									path.append(y);
+									path.append("/");
+									
+								}
+							}
+							Host host = APILocator.getHostAPI().findByName(hostName, user, false);
+							if(UtilMethods.isSet(host)){
+								valueObj=host.getIdentifier();
+								Folder f = APILocator.getFolderAPI().findFolderByPath(path.toString(), host, user, false);
+								if(UtilMethods.isSet(f))
+									valueObj=f.getInode();
+								headersIncludeHostField = true;
+							}
+					}
+					else{
+						Host h = APILocator.getHostAPI().findByName(value, user, false);
+						if(UtilMethods.isSet(h)){
+							valueObj=h.getIdentifier();	
+							headersIncludeHostField = true;
+						}
+					}
+
+					if(valueObj ==null){
 						throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getFieldName() +
 								", value: " + value + ", invalid host/folder inode found, line will be ignored.");
+						
 					}
 				}else if(field.getFieldType().equals(Field.FieldType.IMAGE.toString()) || field.getFieldType().equals(Field.FieldType.FILE.toString())) {
 					String filePath = value;
@@ -919,16 +967,20 @@ public class ContentletUtil {
 					Field field = headers.get(column);
 					Object value = values.get(column);
 
-					if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) { // DOTCMS-4484
+					if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) { // DOTCMS-4484												
 
-						Host host = hostAPI.find(value.toString(), user, false);
-						Folder folder = new Folder();
-						if(!InodeUtils.isSet(host.getInode())){
-							folder = folderAPI.find(value.toString(),user,false);
-						}
+                        //Verify if the value belongs to a Host or to a Folder
+                        Folder folder = null;
+                        Host host = hostAPI.find( value.toString(), user, false );
+                        //If a host was not found using the given value (identifier) it must be a folder
+                        if ( !UtilMethods.isSet( host ) || !InodeUtils.isSet( host.getInode() ) ) {
+                            folder = folderAPI.find( value.toString(), user, false );
+                        }
+
 						if (folder != null && folder.getInode().equalsIgnoreCase(value.toString())) {
+
 							if (!permissionAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)) {
-								throw new DotSecurityException("User have no Add Children Permissions on selected host");
+                                throw new DotSecurityException( "User have no Add Children Permissions on selected folder" );
 							}
 							cont.setHost(folder.getHostId());
 							cont.setFolder(value.toString());

@@ -24,7 +24,7 @@
 	java.util.Hashtable params = new java.util.Hashtable();
 	params.put("struts_action", new String [] {"/ext/content_importer/view_jobs"} );
 	
-	String referrer = com.dotmarketing.util.PortletURLUtil.getRenderURL(request, javax.portlet.WindowState.MAXIMIZED.toString(), params);
+	String referrer = com.dotmarketing.util.PortletURLUtil.getRenderURL(request, com.dotcms.repackage.javax.portlet.WindowState.MAXIMIZED.toString(), params);
 	
 	List<Structure> structures = StructureFactory.getStructuresWithWritePermissions(user, false);
 	request.setAttribute("structures", structures);

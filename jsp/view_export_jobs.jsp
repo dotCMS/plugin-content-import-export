@@ -1,4 +1,4 @@
-<%@ page import="javax.portlet.WindowState" %>
+<%@ page import="com.dotcms.repackage.javax.portlet.WindowState" %>
 <%@ include file="/html/plugins/org.dotcms.plugins.contentImporter/init.jsp" %>
 <%@ include file="/html/common/messages_inc.jsp" %>
 <%@ page import="org.dotcms.plugins.contentImporter.util.ContentImporterQuartzUtils" %>
@@ -16,7 +16,7 @@
 	params.put("struts_action", new String [] {"/ext/content_importer/view_export_jobs"} );
 	params.put("pageNumber",new String[] { pageNumber + "" });
 	
-	String referrer = com.dotmarketing.util.PortletURLUtil.getRenderURL(request, javax.portlet.WindowState.MAXIMIZED.toString(), params);
+	String referrer = com.dotmarketing.util.PortletURLUtil.getRenderURL(request, WindowState.MAXIMIZED.toString(), params);
 %>
 
 
