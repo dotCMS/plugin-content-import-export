@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.cache.ContentTypeCacheImpl;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -31,7 +31,7 @@ public class ContentExporterAjax {
 		Map<String,Object> result = new HashMap<String, Object>();
 		boolean allowImport = true;
 
-		Structure struct = StructureCache.getStructureByInode(structureInode);
+		Structure struct = new ContentTypeCacheImpl().getStructureByInode(structureInode);
 		List<Field> fields = struct.getFields();
 		ArrayList<Map> searchableFields = new ArrayList<Map> ();
 		for (Field field : fields) {
@@ -71,7 +71,7 @@ public class ContentExporterAjax {
 		Map<String,Object> result = new HashMap<String, Object>();
 		boolean allowImport = true;
 
-		Structure struct = StructureCache.getStructureByInode(structureInode);
+		Structure struct = new ContentTypeCacheImpl().getStructureByInode(structureInode);
 		List<Field> fields = struct.getFields();
 		ArrayList<Map> searchableFields = new ArrayList<Map> ();
 		for (Field field : fields) {

@@ -37,7 +37,7 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.cache.ContentTypeCacheImpl;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -460,7 +460,7 @@ public class ImportExternalContentsAction extends DotPortletAction{
 		results.put("identifiers", new ArrayList<String>());
 		results.put("lastInode", new ArrayList<String>());
 
-		Structure st = StructureCache.getStructureByInode (structure);
+		Structure st = new ContentTypeCacheImpl().getStructureByInode (structure);
 		List<Permission> structurePermissions = permissionAPI.getPermissions(st);
 
 		//Initializing variables
@@ -965,7 +965,7 @@ public class ImportExternalContentsAction extends DotPortletAction{
 						String[] tags = ((String)value).split(",");
 						for (String tag : tags) {
 							try {
-								tagAPI.addTagInode((String)tag.trim(), cont.getInode(), Host.SYSTEM_HOST);
+								tagAPI.addContentletTagInode((String)tag.trim(), cont.getInode(), Host.SYSTEM_HOST, field.getVelocityVarName());
 							} catch (Exception e) {
 								e.printStackTrace();
 							}

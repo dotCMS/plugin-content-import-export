@@ -26,7 +26,9 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.cache.ContentTypeCache;
+import com.dotmarketing.cache.ContentTypeCacheImpl;
+
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -52,7 +54,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.business.TagAPI;
-import com.dotmarketing.tag.factories.TagFactory;
+import com.dotmarketing.tag.business.TagFactory;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.ImportUtil;
 import com.dotmarketing.util.InodeUtils;
@@ -141,7 +143,7 @@ public class ContentletUtil {
 		results.put("identifiers", new ArrayList<String>());
 		results.put("lastInode", new ArrayList<String>());
 
-		Structure st = StructureCache.getStructureByInode (structure);
+		Structure st = new ContentTypeCacheImpl().getStructureByInode (structure);
 		List<Permission> structurePermissions = permissionAPI.getPermissions(st);
 		List<UniqueFieldBean> uniqueFieldBeans = new ArrayList<UniqueFieldBean>();
 		List<Field> uniqueFields = new ArrayList<Field>();
@@ -1156,6 +1158,7 @@ public class ContentletUtil {
 						if(publishContent){
 							APILocator.getVersionableAPI().setLive(cont);
 						}
+						TagAPI tagapi = APILocator.getTagAPI();
 						for (Integer column : headers.keySet()) {
 							Field field = headers.get(column);
 							Object value = values.get(column);
@@ -1181,13 +1184,13 @@ public class ContentletUtil {
 										hostId = Host.SYSTEM_HOST;
 									}
 									for (String tag : tags) {
-										TagFactory.addTagInode((String)tag.trim(), cont.getInode(), hostId);
+										tagapi.addContentletTagInode((String)tag.trim(), cont.getInode(), hostId, field.getVelocityVarName());
 									}
 								}
 								else {
 									for (String tagName : tags)
 										try {
-											TagFactory.addTagInode(tagName.trim(), cont.getInode(), Host.SYSTEM_HOST);
+											tagapi.addContentletTagInode(tagName.trim(), cont.getInode(), Host.SYSTEM_HOST, field.getVelocityVarName());
 										} catch (Exception e) {
 											e.printStackTrace();
 										}
@@ -1233,7 +1236,7 @@ public class ContentletUtil {
 		int offset = 0;
 		ContentletAPI conAPI=APILocator.getContentletAPI();
 		List<Contentlet> contentlets=null;
-		Structure st = StructureCache.getStructureByInode (struture);
+		Structure st = new ContentTypeCacheImpl().getStructureByInode (struture);
 		do {
 			contentlets = conAPI.findByStructure(st, user, false, limit, offset);
 			conAPI.delete(contentlets, user, false);
