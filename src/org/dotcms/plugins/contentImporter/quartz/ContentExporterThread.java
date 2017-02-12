@@ -22,8 +22,9 @@ import org.quartz.JobExecutionException;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.ContentTypeCacheImpl;
+import com.dotmarketing.cache.ContentTypeCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
@@ -81,7 +82,7 @@ public class ContentExporterThread implements Job {
 			//String exportlogFile = pluginAPI.loadProperty("org.dotcms.plugins.contentImporter", "exportlogFile");
 
 			String structureId = (String) properties.get("structure");
-			Structure structure = new ContentTypeCacheImpl().getStructureByInode(structureId);
+			Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(structureId);
 			List<Field> fields = new ArrayList<Field>();
 			if (UtilMethods.isSet(properties.get("fields"))) {
 				String[] strFields = ((String) properties.get("fields")).split(",");

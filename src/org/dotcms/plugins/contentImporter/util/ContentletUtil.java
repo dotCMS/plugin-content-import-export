@@ -21,7 +21,9 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -143,7 +145,7 @@ public class ContentletUtil {
 		results.put("identifiers", new ArrayList<String>());
 		results.put("lastInode", new ArrayList<String>());
 
-		Structure st = new ContentTypeCacheImpl().getStructureByInode (structure);
+		Structure st = CacheLocator.getContentTypeCache().getStructureByInode (structure);
 		List<Permission> structurePermissions = permissionAPI.getPermissions(st);
 		List<UniqueFieldBean> uniqueFieldBeans = new ArrayList<UniqueFieldBean>();
 		List<Field> uniqueFields = new ArrayList<Field>();
@@ -1236,7 +1238,7 @@ public class ContentletUtil {
 		int offset = 0;
 		ContentletAPI conAPI=APILocator.getContentletAPI();
 		List<Contentlet> contentlets=null;
-		Structure st = new ContentTypeCacheImpl().getStructureByInode (struture);
+		Structure st = CacheLocator.getContentTypeCache().getStructureByInode (struture);
 		do {
 			contentlets = conAPI.findByStructure(st, user, false, limit, offset);
 			conAPI.delete(contentlets, user, false);
