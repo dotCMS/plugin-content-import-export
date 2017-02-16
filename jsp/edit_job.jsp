@@ -13,7 +13,6 @@
 <%@ page import="com.liferay.portal.NoSuchUserException" %>
 <%@ page import="org.dotcms.plugins.contentImporter.portlet.form.ContentImporterForm" %>
 <%@ page import="com.dotmarketing.business.APILocator" %>
-<%@ page import="com.dotmarketing.portlets.structure.model.Structure" %>
 
 <%
 	ContentImporterForm contentImporterForm = null;
@@ -1013,7 +1012,7 @@ function submitParent() {
 						<%
 							for( Structure structure : APILocator.getStructureAPI().find( APILocator.getUserAPI().getSystemUser(), false, false, "structuretype = "+ Structure.STRUCTURE_TYPE_FILEASSET, "name", Integer.MAX_VALUE, 0, "asc" ) ) {
 						%>
-							<option <%= structure.getName().equals(contentImporterForm.getFileAsset()) ? "selected" : "" %> value="<%= structure.getName() %>"><%= structure.getName() %></option>
+							<option <%= structure.getVelocityVarName().equals(contentImporterForm.getFileAsset()) ? "selected" : "" %> value="<%= structure.getVelocityVarName() %>"><%= structure.getName() %></option>
 						<%
 							}
 						%>

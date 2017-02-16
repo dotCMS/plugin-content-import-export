@@ -4,6 +4,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
@@ -20,9 +22,23 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
 import com.dotcms.repackage.com.csvreader.CsvReader;
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.cache.LiveCache;
+import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.plugin.business.PluginAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Mailer;
 import com.dotmarketing.util.UtilMethods;
@@ -34,6 +50,7 @@ public class ContentImporterThread implements Job {
 
 	public void execute(JobExecutionContext context) throws JobExecutionException {
 		JobDataMap properties = context.getMergedJobDataMap();
+
 		long language = 0;
 		boolean isMultilanguage = false;
 		try {
@@ -46,21 +63,23 @@ public class ContentImporterThread implements Job {
 		}catch(Exception e4){
 			language = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 		}
-		String filePath = null;
-
 		String logPath = "";
-		String fileName = "";
+
+
+		boolean haveFileSource = false;
+		String fileAsset = null;
+		String filePath = null;
 		try {
+			logPath = pluginAPI.loadProperty("org.dotcms.plugins.contentImporter", "logFile");
+
+			haveFileSource = UtilMethods.isSet(properties.get("haveFileSource")) && (Boolean) properties.get("haveFileSource");
+
+			fileAsset = (String) properties.get("fileAsset");
 			filePath = (String) properties.get("filePath");
 
-			logPath = pluginAPI.loadProperty("org.dotcms.plugins.contentImporter", "logFile");
-			File file = new File(filePath);
-			fileName = file.getName();
-			int index = fileName.lastIndexOf(".");
-			if (-1 < index)
-				fileName = fileName.substring(0, index);
 		} catch (Exception e) {
 		}		
+
 
 		try {
 			String structure = (String) properties.get("structure");
@@ -80,6 +99,7 @@ public class ContentImporterThread implements Job {
 				fields = tempArray;
 			}
 
+
 			String reportEmail = (String) properties.get("reportEmail");
 
 			String csvSeparatorDelimiter = (String) properties.get("csvSeparatorDelimiter");
@@ -95,102 +115,209 @@ public class ContentImporterThread implements Job {
 			boolean publishContent = new Boolean((String) properties.get("publishContent"));
 			boolean deleteAllContent = new Boolean((String) properties.get("deleteAllContent"));
 			boolean saveWithoutVersions = new Boolean((String) properties.get("saveWithoutVersions"));
-			
-			HashMap<String, List<String>> results = new HashMap<String, List<String>>();
-			results.put("warnings", new ArrayList<String>());
-			results.put("errors", new ArrayList<String>());
-			results.put("messages", new ArrayList<String>());
-			results.put("results", new ArrayList<String>());
 
-			File tempfile = new File(filePath);
-			List<File> filesList = new ArrayList<File>();
-			if (!tempfile.exists()) {
-				((List<String>) results.get("errors")).add("File: " + filePath + " doesn't exist.");
 
-				sendResults(results, reportEmail, fileName + " Import Results", logPath, fileName);
-			}else if(tempfile.isDirectory()){
-				File[] files = tempfile.listFiles();
-				for(File  f : files){
-					if(f.getName().toLowerCase().endsWith(".csv")){
-						filesList.add(f);
-					}
-				}
+			if (haveFileSource) {
+				importFromContent(
+					fileAsset, logPath, reportEmail,
+					structure, fields, language, isMultilanguage,
+					csvSeparatorDelimiter, csvTextDelimiter,
+					publishContent, deleteAllContent, saveWithoutVersions
+				);
 			} else {
-				filesList.add(tempfile);
+				importFromFileSystem(
+					filePath, logPath, reportEmail, 
+					structure, fields, language, isMultilanguage,
+					csvSeparatorDelimiter, csvTextDelimiter,
+					publishContent, deleteAllContent, saveWithoutVersions
+				);
 			}
-			Collections.sort(filesList);
-			for(File file : filesList){
-				if (!file.exists()) {
-					((List<String>) results.get("errors")).add("File: " + filePath + " doesn't exist.");
 
-					sendResults(results, reportEmail, fileName + " Import Results", logPath, fileName);
-				} else if (!file.isFile()) {
-					((List<String>) results.get("errors")).add(filePath + " isn't a file.");
-
-					sendResults(results, reportEmail, fileName + " Import Results", logPath, fileName);
-				} else if (!file.canRead()) {
-					((List<String>) results.get("errors")).add("File: " + filePath + " can't be readed.");
-
-					sendResults(results, reportEmail, fileName + " Import Results", logPath, fileName);
-				} else {
-					Reader reader = null;
-					CsvReader csvreader = null;
-
-					try {
-						File renameFile = new File(file.getPath() + ".lock");
-						boolean renamed = file.renameTo(renameFile);
-						file = renameFile;
-
-						reader = new InputStreamReader(new FileInputStream(file), Charset.forName("UTF-8"));
-						csvreader = new CsvReader(reader, csvSeparatorDelimiter.charAt(0));
-
-						if (UtilMethods.isSet(csvTextDelimiter))
-							csvreader.setTextQualifier(csvTextDelimiter.charAt(0));
-
-						csvreader.setSafetySwitch(false);
-
-						User user = APILocator.getUserAPI().getSystemUser();
-
-						if (csvreader.readHeaders()) 
-						{	        			
-							ContentletUtil contentletUtil = new ContentletUtil(reader, csvreader);
-							if(deleteAllContent){
-								contentletUtil.deleteAllContent(structure, user);
-							}
-							results = contentletUtil.importFile(structure, fields, false, user, isMultilanguage, language,publishContent,saveWithoutVersions);
-						}	        			        	
-					} catch (Exception e) {
-						((List<String>) results.get("errors")).add("Exception: " + e.toString());
-						Logger.error(ContentImporterThread.class, e.getMessage(),e);
-					} finally {
-						if (reader != null) {
-							try {
-								reader.close();
-							} catch (Exception e) {
-							}
-						}
-
-						if (csvreader != null) {
-							try {
-								csvreader.close();
-							} catch (Exception e) {
-							}
-						}
-
-						moveImportedFile(file.getPath());
-						sendResults(results, reportEmail, fileName + " Import Results", logPath, fileName);						
-					}
-				}
-			}
 		} catch (Exception e1) {
 			Logger.warn(this, e1.toString());                  
 		}               
-	}	
+	}
 
-	public static final String[] IMP_DATE_FORMATS = new String[] { "d-MMM-yy", "MMM-yy", "MMMM-yy", "d-MMM", "dd-MMM-yyyy", 
-		"MM/dd/yy hh:mm aa", "MM/dd/yyyy hh:mm aa",	"MM/dd/yy HH:mm", "MM/dd/yyyy HH:mm", "MMMM dd, yyyy", "M/d/y", "M/d", 
-		"EEEE, MMMM dd, yyyy", "MM/dd/yyyy", "hh:mm:ss aa", "HH:mm:ss", "hh:mm aa" };
+	private void importFromContent(
+		String fileAsset, String logPath, String reportEmail,
+		String structure, String[] fields, long language, boolean isMultilanguage, String csvSeparatorDelimiter,
+		String csvTextDelimiter, boolean publishContent, boolean deleteAllContent, boolean saveWithoutVersions
+	) {
+		HashMap<String, List<String>> results = createResults();
 
+		try {
+			String luceneQuery = "+structureName:"+ fileAsset +" +"+ fileAsset +".fileName:*.csv +deleted:false  +live:true";
+			if (!isMultilanguage) {
+				luceneQuery += " +languageId:"+ language;
+			}
+
+			List<Contentlet> hits = APILocator.getContentletAPI().search(
+				luceneQuery, -1, 0, "modDate asc", APILocator.getUserAPI().getSystemUser(), false
+			);
+
+			for(Contentlet contentlet : hits) {
+
+				String fileName = fileAsset;
+
+				try {
+					FileAsset fileAssetCont = APILocator.getFileAssetAPI().fromContentlet(contentlet);
+
+					fileName = fileAssetCont.getFileName();
+					int index = fileName.lastIndexOf(".");
+					if (-1 < index)
+						fileName = fileName.substring(0, index);
+
+					try {
+
+						HashMap<String, List<String>> currentResults = importInputStream(
+							fileAssetCont.getFileInputStream(), csvTextDelimiter, csvSeparatorDelimiter,
+							structure, fields, fileAssetCont.getLanguageId(), isMultilanguage,
+							publishContent, deleteAllContent, saveWithoutVersions
+						);
+
+						if (currentResults != null) {
+							results = currentResults;
+						}						
+
+					} finally {
+
+						moveImportedAsset(
+							contentlet, fileAssetCont,
+							fileName + " - " + UtilMethods.dateToHTMLDate(new Date(), "yyyyMMddHHmmss") + ".csv.old"
+						);
+
+					}
+				} catch (Exception e) {
+
+					((List<String>) results.get("errors")).add("Exception: " + e.toString());
+					Logger.error(ContentImporterThread.class, e.getMessage(),e);
+
+				} finally {
+
+					sendResults(results, reportEmail, fileName + " Import Results", logPath, fileName);
+				}
+			}
+
+		} catch (Exception e) {
+			((List<String>) results.get("errors")).add("Exception: " + e.toString());
+
+			Logger.error(ContentImporterThread.class, e.getMessage(),e);
+
+			sendResults(results, reportEmail, fileAsset + " Import Results", logPath, fileAsset);						
+		}
+	}
+
+	// Mostly borrowed from com.dotmarketing.portlets.fileassets.business.FileAssetAPIImpl.renameFile(Contentlet, String, User, boolean)
+	public void moveImportedAsset(Contentlet contentlet, FileAsset fileAssetCont, String newName) throws DotStateException, DotDataException, DotSecurityException, IOException {
+		Identifier id = APILocator.getIdentifierAPI().find(contentlet);
+		Host host = APILocator.getHostAPI().find(id.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
+		Folder folder = APILocator.getFolderAPI().findFolderByPath(id.getParentPath(), host, APILocator.getUserAPI().getSystemUser(), false);
+
+		if(!APILocator.getFileAssetAPI().fileNameExists(host, folder, newName, id.getId())){			    
+		    File oldFile = contentlet.getBinary(FileAssetAPI.BINARY_FIELD);
+			File newFile = new File(oldFile.getPath().substring(0,oldFile.getPath().indexOf(oldFile.getName()))+newName);
+
+			try {
+				APILocator.getContentletIndexAPI().removeContentFromIndex(contentlet);
+
+				FileUtils.copyFile(oldFile, newFile);
+				contentlet.setInode(null);
+				contentlet.setFolder(folder.getInode());
+				contentlet.setBinary(FileAssetAPI.BINARY_FIELD, newFile);
+				contentlet.setStringProperty(FileAssetAPI.TITLE_FIELD, newName);
+				contentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, newName);
+				contentlet= APILocator.getContentletAPI().checkin(contentlet, APILocator.getUserAPI().getSystemUser(), false);
+
+				APILocator.getContentletIndexAPI().addContentToIndex(contentlet);
+
+				APILocator.getVersionableAPI().setLive(contentlet);
+
+				LiveCache.removeAssetFromCache(contentlet);
+				LiveCache.addToLiveAssetToCache(contentlet);
+				WorkingCache.removeAssetFromCache(contentlet);
+				WorkingCache.addToWorkingAssetToCache(contentlet);
+				RefreshMenus.deleteMenu(folder);
+				CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
+				CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
+
+			} catch (Exception e) {
+				Logger.error(this, "Unable to rename file asset to "+ newName + " for asset " + id.getId(), e);
+				throw e;
+			} finally {
+				if (newFile != null) {
+					FileUtils.deleteQuietly(newFile);
+				}
+			}
+		}
+	}
+
+	private void importFromFileSystem(
+		String filePath, String logPath, String reportEmail,
+		String structure, String[] fields, long language, boolean isMultilanguage,
+		String csvSeparatorDelimiter, String csvTextDelimiter,
+		boolean publishContent, boolean deleteAllContent, boolean saveWithoutVersions
+	) {
+		HashMap<String, List<String>> results = createResults();
+
+		String fileName = new File(filePath).getName();
+		int index = fileName.lastIndexOf(".");
+		if (-1 < index)
+			fileName = fileName.substring(0, index);
+
+		File tempfile = new File(filePath);
+		List<File> filesList = new ArrayList<File>();
+		if (!tempfile.exists()) {
+			((List<String>) results.get("errors")).add("File: " + filePath + " doesn't exist.");
+
+			sendResults(results, reportEmail, fileName + " Import Results", logPath, fileName);
+		}else if(tempfile.isDirectory()){
+			File[] files = tempfile.listFiles();
+			for(File  f : files){
+				if(f.getName().toLowerCase().endsWith(".csv")){
+					filesList.add(f);
+				}
+			}
+		} else {
+			filesList.add(tempfile);
+		}
+		Collections.sort(filesList);
+		for(File file : filesList){
+			if (!file.exists()) {
+				((List<String>) results.get("errors")).add("File: " + filePath + " doesn't exist.");
+
+				sendResults(results, reportEmail, fileName + " Import Results", logPath, fileName);
+			} else if (!file.isFile()) {
+				((List<String>) results.get("errors")).add(filePath + " isn't a file.");
+
+				sendResults(results, reportEmail, fileName + " Import Results", logPath, fileName);
+			} else if (!file.canRead()) {
+				((List<String>) results.get("errors")).add("File: " + filePath + " can't be readed.");
+
+				sendResults(results, reportEmail, fileName + " Import Results", logPath, fileName);
+			} else {
+				try {
+					File renameFile = new File(file.getPath() + ".lock");
+					file.renameTo(renameFile);
+					file = renameFile;
+
+					HashMap<String, List<String>> currentResults = importInputStream(
+						new FileInputStream(file), csvTextDelimiter, csvSeparatorDelimiter,
+						structure, fields, language, isMultilanguage,
+						publishContent, deleteAllContent, saveWithoutVersions
+					);
+					if (currentResults != null) {
+						results = currentResults;
+					}
+				} catch (Exception e) {
+					((List<String>) results.get("errors")).add("Exception: " + e.toString());
+					Logger.error(ContentImporterThread.class, e.getMessage(),e);
+				} finally {
+					moveImportedFile(file.getPath());
+					sendResults(results, reportEmail, fileName + " Import Results", logPath, fileName);						
+				}
+			}
+		}
+	}
 
 	private void moveImportedFile(String filePath) {
 		try {
@@ -213,6 +340,62 @@ public class ContentImporterThread implements Job {
 		} catch (Exception e) {
 			Logger.info(this, e.toString());
 		}
+	}
+
+	private HashMap<String, List<String>> importInputStream(
+		InputStream inputStream, String csvTextDelimiter, String csvSeparatorDelimiter,
+		String structure, String[] fields, long language, boolean isMultilanguage,
+		boolean publishContent, boolean deleteAllContent, boolean saveWithoutVersions
+	) throws IOException, DotDataException, DotSecurityException {
+		Reader reader = null;
+		CsvReader csvreader = null;
+
+		try {
+			reader = new InputStreamReader(inputStream, Charset.forName("UTF-8"));
+			csvreader = new CsvReader(reader, csvSeparatorDelimiter.charAt(0));
+
+			if (UtilMethods.isSet(csvTextDelimiter))
+				csvreader.setTextQualifier(csvTextDelimiter.charAt(0));
+
+			csvreader.setSafetySwitch(false);
+
+			User user = APILocator.getUserAPI().getSystemUser();
+
+			if (csvreader.readHeaders()) 
+			{
+				ContentletUtil contentletUtil = new ContentletUtil(reader, csvreader);
+				if(deleteAllContent){
+					contentletUtil.deleteAllContent(structure, user);
+				}
+				return contentletUtil.importFile(structure, fields, false, user, isMultilanguage, language,publishContent,saveWithoutVersions);
+			}
+			return null;
+		} finally {
+			if (reader != null) {
+				try {
+					reader.close();
+				} catch (Exception e) {
+				}
+			}
+
+			if (csvreader != null) {
+				try {
+					csvreader.close();
+				} catch (Exception e) {
+				}
+			}
+		}
+	}
+
+	private HashMap<String, List<String>> createResults() {
+		HashMap<String, List<String>> results = new HashMap<String, List<String>>();
+
+		results.put("warnings", new ArrayList<String>());
+		results.put("errors", new ArrayList<String>());
+		results.put("messages", new ArrayList<String>());
+		results.put("results", new ArrayList<String>());
+
+		return results;
 	}
 
 	private void sendResults(HashMap<String, List<String>> results, String reportEmail, String subject,String logPath, String fileName) {
