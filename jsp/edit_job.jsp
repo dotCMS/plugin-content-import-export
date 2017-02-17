@@ -1001,14 +1001,14 @@ function submitParent() {
 			<dd>
 				<input type="radio" dojoType="dijit.form.RadioButton" <%=(!contentImporterForm.isHaveFileSource()) ? "checked" : "" %> id="haveFilePath" name="haveFileSource" value="false" onclick="toggleFileSource(this)" /><%=LanguageUtil.get(pageContext,"content-importer-use-filepath")%>
 				<div id="filePathDiv" style="margin-left:20px;">
-					<input class="form-text" dojoType="dijit.form.TextBox" name="filePath" size="75" id="filePath" value="<%= UtilMethods.isSet(contentImporterForm.getFilePath()) ? contentImporterForm.getFilePath() : "" %>" style="width: 300px;" type="text" >
+					<img src="/html/images/icons/required.gif"/><%=LanguageUtil.get(pageContext,"content-importer-file-path-title")%><input class="form-text" dojoType="dijit.form.TextBox" name="filePath" size="75" id="filePath" value="<%= UtilMethods.isSet(contentImporterForm.getFilePath()) ? contentImporterForm.getFilePath() : "" %>" style="width: 300px;" type="text" >
 					<br/>
 					<em><%=LanguageUtil.get(pageContext,"content-importer-file-path-hint")%></em>
 				</div>
 				<br/>
 				<input type="radio" dojoType="dijit.form.RadioButton" <%=(contentImporterForm.isHaveFileSource()) ? "checked" : "" %> id="haveFileAsset" name="haveFileSource" value="true" onclick="toggleFileSource(this)" /><%=LanguageUtil.get(pageContext,"content-importer-use-fileasset")%>
 				<div id="fileAssetDiv" style="margin-left:20px;">
-					<select dojoType="dijit.form.FilteringSelect" name="fileAsset" id="fileAsset" value="<%= UtilMethods.isSet(contentImporterForm.getFileAsset()) ? contentImporterForm.getFileAsset() : "" %>" >
+					<img src="/html/images/icons/required.gif"/><%=LanguageUtil.get(pageContext,"content-importer-file-asset-title")%><select dojoType="dijit.form.FilteringSelect" name="fileAsset" id="fileAsset" value="<%= UtilMethods.isSet(contentImporterForm.getFileAsset()) ? contentImporterForm.getFileAsset() : "" %>" >
 						<%
 							for( Structure structure : APILocator.getStructureAPI().find( APILocator.getUserAPI().getSystemUser(), false, false, "structuretype = "+ Structure.STRUCTURE_TYPE_FILEASSET, "name", Integer.MAX_VALUE, 0, "asc" ) ) {
 						%>
@@ -1019,6 +1019,11 @@ function submitParent() {
 					</select>
 					<br/>
 					<em><%=LanguageUtil.get(pageContext,"content-importer-file-asset-hint")%></em>
+					<br/>
+					<br/>
+					<%=LanguageUtil.get(pageContext,"content-importer-file-asset-query-title")%><input class="form-text" dojoType="dijit.form.TextBox" name="fileAssetQuery" size="75" id="fileAssetQuery" value="<%= UtilMethods.isSet(contentImporterForm.getFileAssetQuery()) ? contentImporterForm.getFileAssetQuery() : "" %>" style="width: 300px;" type="text" >
+					<br/>
+					<em><%=LanguageUtil.get(pageContext,"content-importer-file-asset-query-hint")%></em>
 				</div>
 			</dd>
 			<script>

@@ -67,7 +67,7 @@ public class ContentImporterThread implements Job {
 
 
 		boolean haveFileSource = false;
-		String fileAsset = null;
+		String fileAsset = null, fileAssetQuery = null;
 		String filePath = null;
 		try {
 			logPath = pluginAPI.loadProperty("org.dotcms.plugins.contentImporter", "logFile");
@@ -75,6 +75,7 @@ public class ContentImporterThread implements Job {
 			haveFileSource = UtilMethods.isSet(properties.get("haveFileSource")) && (Boolean) properties.get("haveFileSource");
 
 			fileAsset = (String) properties.get("fileAsset");
+			fileAssetQuery = (String) properties.get("fileAssetQuery");
 			filePath = (String) properties.get("filePath");
 
 		} catch (Exception e) {
@@ -119,7 +120,7 @@ public class ContentImporterThread implements Job {
 
 			if (haveFileSource) {
 				importFromContent(
-					fileAsset, logPath, reportEmail,
+					fileAsset, fileAssetQuery, logPath, reportEmail,
 					structure, fields, language, isMultilanguage,
 					csvSeparatorDelimiter, csvTextDelimiter,
 					publishContent, deleteAllContent, saveWithoutVersions
@@ -139,14 +140,21 @@ public class ContentImporterThread implements Job {
 	}
 
 	private void importFromContent(
-		String fileAsset, String logPath, String reportEmail,
+		String fileAsset, String fileAssetQuery, String logPath, String reportEmail,
 		String structure, String[] fields, long language, boolean isMultilanguage, String csvSeparatorDelimiter,
 		String csvTextDelimiter, boolean publishContent, boolean deleteAllContent, boolean saveWithoutVersions
 	) {
 		HashMap<String, List<String>> results = createResults();
 
 		try {
-			String luceneQuery = "+structureName:"+ fileAsset +" +"+ fileAsset +".fileName:*.csv +deleted:false  +live:true";
+			String luceneQuery = "+structureName:"+ fileAsset +" ";
+			
+			if (UtilMethods.isSet(fileAssetQuery)) {
+				luceneQuery += fileAssetQuery;
+			} else {
+				luceneQuery += "+"+ fileAsset +".fileName:*.csv +deleted:false  +live:true";
+			}
+
 			if (!isMultilanguage) {
 				luceneQuery += " +languageId:"+ language;
 			}

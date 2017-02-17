@@ -338,6 +338,8 @@ public class EditContentImporterJobAction extends DotPortletAction {
 			properties.put("filePath", contentImporterForm.getFilePath());
 		if (UtilMethods.isSet(contentImporterForm.getFileAsset()))
 			properties.put("fileAsset", contentImporterForm.getFileAsset());
+		if (UtilMethods.isSet(contentImporterForm.getFileAssetQuery()))
+			properties.put("fileAssetQuery", contentImporterForm.getFileAssetQuery());
 
 		if (UtilMethods.isSet(contentImporterForm.getReportEmail()))
 			properties.put("reportEmail", contentImporterForm.getReportEmail());
@@ -733,6 +735,7 @@ public class EditContentImporterJobAction extends DotPortletAction {
 
 			contentImporterForm.setFilePath((String) properties.get("filePath"));
 			contentImporterForm.setFileAsset((String) properties.get("fileAsset"));
+			contentImporterForm.setFileAssetQuery((String) properties.get("fileAssetQuery"));
 			if (UtilMethods.isSet(properties.get("haveFileSource")))
 				contentImporterForm.setHaveFileSource((Boolean) properties.get("haveFileSource"));
 

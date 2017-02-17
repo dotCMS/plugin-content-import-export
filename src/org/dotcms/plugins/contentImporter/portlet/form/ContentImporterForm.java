@@ -14,6 +14,7 @@ public class ContentImporterForm extends SchedulerForm {
 	private boolean haveFileSource;
 	private String filePath;
 	private String fileAsset;
+	private String fileAssetQuery;
 	private String reportEmail;
 	private String csvSeparatorDelimiter;
 	private String csvTextDelimiter;
@@ -147,6 +148,20 @@ public class ContentImporterForm extends SchedulerForm {
 	 */
 	public void setFileAsset(String fileAsset) {
 		this.fileAsset = fileAsset;
+	}
+
+	/**
+	 * @return the fileAssetQuery
+	 */
+	public String getFileAssetQuery() {
+		return fileAssetQuery;
+	}
+
+	/**
+	 * @param fileAssetQuery the fileAssetQuery to set
+	 */
+	public void setFileAssetQuery(String fileAssetQuery) {
+		this.fileAssetQuery = fileAssetQuery;
 	}
 
 	/**
