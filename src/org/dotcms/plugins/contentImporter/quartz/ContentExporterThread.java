@@ -21,13 +21,15 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.ContentTypeCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
@@ -36,9 +38,12 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Mailer;
 import com.dotmarketing.util.UtilMethods;
@@ -73,8 +78,16 @@ public class ContentExporterThread implements Job {
 			}catch(Exception e4){
 				language = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 			}
-			boolean overWriteFile = (Boolean) properties.get("overWriteFile");
+
+			boolean haveFileTarget = UtilMethods.isSet(properties.get("haveFileTarget")) && (Boolean) properties.get("haveFileTarget");
+
+			String fileAsset = (String) properties.get("fileAsset");
+			String fileAssetHost = (String) properties.get("fileAssetHost");
+			String fileAssetPath = (String) properties.get("fileAssetPath");
+
 			String filePath = (String) properties.get("filePath");
+			boolean overWriteFile = (Boolean) properties.get("overWriteFile");
+
 			if(!UtilMethods.isSet(filePath)){
 				filePath = pluginAPI.loadProperty("org.dotcms.plugins.contentImporter", "exportedFilePath");
 			}
@@ -107,13 +120,75 @@ public class ContentExporterThread implements Job {
 			}
 
 			String userId = (String) properties.get("userId");
-			downloadToExcel(structure,fields, language, isMultilanguage, csvTextDelimiter, csvSeparatorDelimiter, filePath,overWriteFile, reportEmail,userId);
+			User user = APILocator.getUserAPI().loadUserById(userId, APILocator.getUserAPI().getSystemUser(), false);			
+
+			if (haveFileTarget) {
+				exportToContent(
+					fileAsset, fileAssetHost, fileAssetPath, user, reportEmail,
+					structure, fields, language, isMultilanguage,
+					csvTextDelimiter, csvSeparatorDelimiter					
+				);
+			} else {
+				exportToFileSystem(
+					filePath, overWriteFile, user, reportEmail,
+					structure, fields, language, isMultilanguage,
+					csvTextDelimiter, csvSeparatorDelimiter
+				);
+			}
 			Logger.info(ContentExporterThread.class, "Finished Export Content process");
 
 		} catch (Exception e1) {
 			Logger.error(ContentExporterThread.class, e1.getMessage(),e1);                  
 		}               
-	}	
+	}
+
+	private void exportToContent(
+		String fileAsset, String fileAssetHost, String fileAssetPath, User user, String reportEmail,
+		Structure st, List<Field> fields, long language, boolean isMultilanguage,
+		String csvTextDelimiter, String csvSeparatorDelimiter
+	) throws DotSecurityException{
+		try {
+			User systemUser = APILocator.getUserAPI().getSystemUser();
+			Host host = APILocator.getHostAPI().findByName(fileAssetHost, systemUser, false);
+			Structure fileAssetStructure = CacheLocator.getContentTypeCache().getStructureByName(fileAsset);
+
+			// Get or create folder
+			Folder folder = APILocator.getFolderAPI().findFolderByPath(fileAssetPath, host, systemUser, false);
+			if(!InodeUtils.isSet(folder.getInode() )){
+				folder = APILocator.getFolderAPI().createFolders(fileAssetPath, host,user,false);
+				Permission newPerm = new Permission();
+				newPerm.setPermission(PermissionAPI.PERMISSION_PUBLISH);
+				newPerm.setRoleId(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
+				newPerm.setInode(folder.getInode());
+				APILocator.getPermissionAPI().save(newPerm, folder, systemUser, false);
+			}
+
+			// Export CSV file to temp file and then to Content
+			File tempFile = File.createTempFile(st.getVelocityVarName(), ".csv");
+			try {
+				exportFile(tempFile, user, st, fields, language, isMultilanguage, csvTextDelimiter, csvSeparatorDelimiter);
+
+				String fileName = st.getVelocityVarName() +"_"+UtilMethods.dateToHTMLDate(new Date(), "MMddyyyyHHmmss");
+				fileName=fileName+".csv";
+
+				Contentlet cont = new Contentlet();
+				cont.setStructureInode(fileAssetStructure.getInode());
+				cont.setStringProperty(FileAssetAPI.TITLE_FIELD, UtilMethods.getFileName(fileName));
+				cont.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileName);
+				cont.setFolder(folder.getInode());
+				cont.setHost(host.getIdentifier());
+				cont.setBinary(FileAssetAPI.BINARY_FIELD, tempFile);
+				cont = APILocator.getContentletAPI().checkin(cont, user,false);
+		        conAPI.publish(cont, user, false);
+
+			} finally {
+				tempFile.delete();
+			}
+		}catch(Exception p){
+			Logger.error(this,p.getMessage(),p);
+			sendExportReport(reportEmail,"Error"," Error: "+p.getMessage(), null);
+		}
+	}
 
 	/**
 	 * Generated the excel file and then compressed
@@ -128,16 +203,12 @@ public class ContentExporterThread implements Job {
 	 * @param userId
 	 * @throws DotSecurityException
 	 */
-	private void downloadToExcel(Structure st, List<Field> fields,long language, boolean isMultilanguage, String csvTextDelimiter, String csvSeparatorDelimiter, String filePath, boolean overWriteFile, String reportEmail, String userId) throws DotSecurityException{
-		PrintWriter pr = null;
+	private void exportToFileSystem(
+		String filePath, boolean overWriteFile, User user, String reportEmail,
+		Structure st, List<Field> fields, long language, boolean isMultilanguage,
+		String csvTextDelimiter, String csvSeparatorDelimiter
+	) throws DotSecurityException{
 		try {
-			User user = APILocator.getUserAPI().loadUserById(userId, APILocator.getUserAPI().getSystemUser(), false);			
-			String query ="+structureName:"+st.getVelocityVarName()+" +working:true +deleted:false";
-			if(!isMultilanguage){
-				query =query +" +languageId:"+language;
-			}
-			List<ContentletSearch> contentletsReducedList = conAPI.searchIndex(query, 0, 0, "modDate asc", user, false);
-
 			String fileName = st.getVelocityVarName();
 			if(!overWriteFile){
 				fileName=fileName+"_"+UtilMethods.dateToHTMLDate(new Date(), "MMddyyyyHHmmss");
@@ -149,175 +220,8 @@ public class ContentExporterThread implements Job {
 				fileDirectory.mkdir();
 			}
 			File file = new File(fileDirectory.getPath()+File.separator+fileName);
-			pr = new PrintWriter(file);
-
-			List<Field> stFields = FieldsCache.getFieldsByStructureInode(st.getInode());
-			pr.print(csvTextDelimiter+"Identifier"+csvTextDelimiter);		
-			pr.print(csvSeparatorDelimiter+csvTextDelimiter+"languageCode"+csvTextDelimiter);
-			pr.print(csvSeparatorDelimiter+csvTextDelimiter+"countryCode"+csvTextDelimiter);
-			for (Field f : stFields) {
-				//we cannot export fields of these types
-				if (f.getFieldType().equals(Field.FieldType.BUTTON.toString()) || 						
-						f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString()) ||
-						f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())){
-					continue;
-				}else if(f.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())){
-					if(fields.size()== 0 || fields.contains(f)){
-						pr.print(csvSeparatorDelimiter+csvTextDelimiter+(f.getFieldName().contains(",")?f.getFieldName().replaceAll(",", "&#44;"):f.getFieldName())+csvTextDelimiter);
-					}
-				}else if(f.getFieldType().equals(Field.FieldType.FILE.toString()) ||
-						f.getFieldType().equals(Field.FieldType.IMAGE.toString()) ||
-						f.getFieldType().equals(Field.FieldType.BINARY.toString())){
-					if(fields.size()== 0 || fields.contains(f)){
-						pr.print(csvSeparatorDelimiter+csvTextDelimiter+(f.getFieldName().contains(",")?f.getFieldName().replaceAll(",", "&#44;"):f.getFieldName())+csvTextDelimiter);
-						pr.print(csvSeparatorDelimiter+csvTextDelimiter+(f.getFieldName().contains(",")?f.getFieldName().replaceAll(",", "&#44;"):f.getFieldName())+" (Path)"+csvTextDelimiter);
-					}
-				}else{
-					if(fields.size()== 0 || fields.contains(f)){
-						pr.print(csvSeparatorDelimiter+csvTextDelimiter+(f.getFieldName().contains(",")?f.getFieldName().replaceAll(",", "&#44;"):f.getFieldName())+csvTextDelimiter);
-					}
-				}
-			}
-
-			pr.print("\r\n");
-			Logger.info(ContentExporterThread.class, "Export Content processing "+contentletsReducedList.size()+" Contentlet(s)");
-			for(ContentletSearch cont :  contentletsReducedList){
-				Contentlet content = conAPI.find(cont.getInode(), user, false);
-				List<Category> catList = (List<Category>) catAPI.getParents(content, user, false);
-				pr.print(csvTextDelimiter+content.getIdentifier()+csvTextDelimiter);
-				Language lang =APILocator.getLanguageAPI().getLanguage(content.getLanguageId());
-				pr.print(csvSeparatorDelimiter+csvTextDelimiter +lang.getLanguageCode()+csvTextDelimiter);
-				pr.print(csvSeparatorDelimiter+csvTextDelimiter+lang.getCountryCode()+csvTextDelimiter);
-
-				for (Field f : stFields) {
-					if(fields.size()== 0 || fields.contains(f)){
-						try {
-							//we cannot export fields of these types
-							if (f.getFieldType().equals(Field.FieldType.BUTTON.toString()) || 
-									f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString()) ||
-									f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())){
-								continue;
-							}
-							Object value = "";
-							if(conAPI.getFieldValue(content,f) != null)  
-								value = conAPI.getFieldValue(content,f);
-							String text = "";
-							String assetPath = "";
-							String hostname = "";
-
-							if(f.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())){
-								if(UtilMethods.isSet(value)){
-									try{
-										text = value.toString();
-										if(text.endsWith(",")){
-											text = text.substring (0, text.length()-1);
-										}
-										Host host = APILocator.getHostAPI().find(text, user, false);
-										hostname = host.getHostname();
-									}catch(Exception e){
-										Logger.error(ContentExporterThread.class, e.getMessage());
-									}
-								}
-							}else if(f.getFieldType().equals(Field.FieldType.FILE.toString()) || f.getFieldType().equals(Field.FieldType.IMAGE.toString())){
-								text = value.toString();
-								if(UtilMethods.isSet(text)){
-									try{
-										Contentlet asset = conAPI.findContentletByIdentifier(text, false, (language==-1?APILocator.getLanguageAPI().getDefaultLanguage().getId():language), user, false);
-										FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(asset);
-										text = fileAsset.getFileName();
-										if(text.endsWith(",")){
-											text = text.substring (0, text.length()-1);
-										}
-										assetPath ="http://"+hostAPI.find(fileAsset.getHost(), user, false).getHostname()+fileAsset.getURI();
-									}catch(Exception e){
-										Logger.error(ContentExporterThread.class, e.getMessage());
-									}
-								}
-							}else if(f.getFieldType().equals(Field.FieldType.BINARY.toString())){								
-								File binaryfile = content.getBinary(f.getVelocityVarName()); 								
-								if(UtilMethods.isSet(binaryfile)){
-									try{
-										text = binaryfile.getName();
-										if(text.endsWith(",")){
-											text = text.substring (0, text.length()-1);
-										}
-										assetPath = "http://"+hostAPI.find(content.getHost(), user, false).getHostname()+"/contentAsset/raw-data/"+content.getIdentifier()+"/"+ f.getVelocityVarName() + "/" + content.getInode();
-									}catch(Exception e){
-										Logger.error(ContentExporterThread.class, e.getMessage());
-									}
-								}
-							}else if(f.getFieldType().equals(Field.FieldType.CATEGORY.toString())){
-
-								Category category = catAPI.find(f.getValues(), user, false);
-								List<Category> children = catList;
-								List<Category> allChildren= catAPI.getAllChildren(category, user, false);
-
-
-								if (children.size() >= 1 && catAPI.canUseCategory(category, user, false)) {
-									//children = (List<Category>)CollectionUtils.retainAll(catList, children);
-									for(Category cat : children){
-										if(allChildren.contains(cat)){
-											if(UtilMethods.isSet(cat.getKey())){
-												text = text+csvSeparatorDelimiter+cat.getKey();
-											}else{
-												text = text+csvSeparatorDelimiter+cat.getCategoryName();
-											}
-										}
-									}
-								}
-								if(UtilMethods.isSet(text)){
-									text=text.substring(1);
-								}
-							}else{
-
-								if (value instanceof Date || value instanceof Timestamp) {
-									if(f.getFieldType().equals(Field.FieldType.DATE.toString())) {
-										SimpleDateFormat formatter = new SimpleDateFormat (WebKeys.DateFormats.EXP_IMP_DATE);
-										text = formatter.format(value);
-									} else if(f.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
-										SimpleDateFormat formatter = new SimpleDateFormat (WebKeys.DateFormats.EXP_IMP_DATETIME);
-										text = formatter.format(value);
-									} else if(f.getFieldType().equals(Field.FieldType.TIME.toString())) {
-										SimpleDateFormat formatter = new SimpleDateFormat (WebKeys.DateFormats.EXP_IMP_TIME);
-										text = formatter.format(value);
-									}                                    
-								} else {
-									text = value.toString();
-									if(text.endsWith(",")){
-										text = text.substring (0, text.length()-1);
-									}
-								}
-
-							}
-							//Windows carriage return conversion
-							text = text.replaceAll("\r","");
-
-							if(f.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())){
-								pr.print(csvSeparatorDelimiter+csvTextDelimiter+text+csvTextDelimiter);
-							}else if(f.getFieldType().equals(Field.FieldType.FILE.toString()) || f.getFieldType().equals(Field.FieldType.IMAGE.toString()) ||
-									f.getFieldType().equals(Field.FieldType.BINARY.toString())){
-								pr.print(csvSeparatorDelimiter+csvTextDelimiter+text+csvTextDelimiter);
-								pr.print(csvSeparatorDelimiter+csvTextDelimiter+assetPath+csvTextDelimiter);
-							}else if(text.contains(",") || text.contains("\n")) {
-								//Double quotes replacing
-								text = text.replaceAll("\"","\"\"");
-								//pr.print(csvSeparatorDelimiter+"\""+text+"\"");
-								pr.print(csvSeparatorDelimiter+csvTextDelimiter+text+csvTextDelimiter);
-							} else{
-								pr.print(csvSeparatorDelimiter+csvTextDelimiter+text+csvTextDelimiter);						
-							}
-						}catch(Exception e){
-							pr.print(csvSeparatorDelimiter);
-							Logger.error(this,e.getMessage(),e);
-						}
-					}
-				}
-				pr.print("\r\n");
-			}
-
-			pr.flush();
-			pr.close();
-			HibernateUtil.closeSession();
+			
+			exportFile(file, user, st, fields, language, isMultilanguage, csvTextDelimiter, csvSeparatorDelimiter);
 
 			/*Compressing file*/
 			file = zipFile(file);
@@ -329,6 +233,189 @@ public class ContentExporterThread implements Job {
 			Logger.error(this,p.getMessage(),p);
 			sendExportReport(reportEmail,"Error"," Error: "+p.getMessage(), null);
 		}
+	}
+
+	private void exportFile(
+		File file, User user,
+		Structure st, List<Field> fields, long language, boolean isMultilanguage,
+		String csvTextDelimiter, String csvSeparatorDelimiter
+	) throws IOException, DotDataException, DotSecurityException{
+
+		String query ="+structureName:"+st.getVelocityVarName()+" +working:true +deleted:false";
+		if(!isMultilanguage){
+			query =query +" +languageId:"+language;
+		}
+		List<ContentletSearch> contentletsReducedList = conAPI.searchIndex(query, 0, 0, "modDate asc", user, false);
+
+		PrintWriter pr = new PrintWriter(file);
+
+		List<Field> stFields = FieldsCache.getFieldsByStructureInode(st.getInode());
+		pr.print(csvTextDelimiter+"Identifier"+csvTextDelimiter);		
+		pr.print(csvSeparatorDelimiter+csvTextDelimiter+"languageCode"+csvTextDelimiter);
+		pr.print(csvSeparatorDelimiter+csvTextDelimiter+"countryCode"+csvTextDelimiter);
+		for (Field f : stFields) {
+			//we cannot export fields of these types
+			if (f.getFieldType().equals(Field.FieldType.BUTTON.toString()) || 						
+					f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString()) ||
+					f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())){
+				continue;
+			}else if(f.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())){
+				if(fields.size()== 0 || fields.contains(f)){
+					pr.print(csvSeparatorDelimiter+csvTextDelimiter+(f.getFieldName().contains(",")?f.getFieldName().replaceAll(",", "&#44;"):f.getFieldName())+csvTextDelimiter);
+				}
+			}else if(f.getFieldType().equals(Field.FieldType.FILE.toString()) ||
+					f.getFieldType().equals(Field.FieldType.IMAGE.toString()) ||
+					f.getFieldType().equals(Field.FieldType.BINARY.toString())){
+				if(fields.size()== 0 || fields.contains(f)){
+					pr.print(csvSeparatorDelimiter+csvTextDelimiter+(f.getFieldName().contains(",")?f.getFieldName().replaceAll(",", "&#44;"):f.getFieldName())+csvTextDelimiter);
+					pr.print(csvSeparatorDelimiter+csvTextDelimiter+(f.getFieldName().contains(",")?f.getFieldName().replaceAll(",", "&#44;"):f.getFieldName())+" (Path)"+csvTextDelimiter);
+				}
+			}else{
+				if(fields.size()== 0 || fields.contains(f)){
+					pr.print(csvSeparatorDelimiter+csvTextDelimiter+(f.getFieldName().contains(",")?f.getFieldName().replaceAll(",", "&#44;"):f.getFieldName())+csvTextDelimiter);
+				}
+			}
+		}
+
+		pr.print("\r\n");
+		Logger.info(ContentExporterThread.class, "Export Content processing "+contentletsReducedList.size()+" Contentlet(s)");
+		for(ContentletSearch cont :  contentletsReducedList){
+			Contentlet content = conAPI.find(cont.getInode(), user, false);
+			List<Category> catList = (List<Category>) catAPI.getParents(content, user, false);
+			pr.print(csvTextDelimiter+content.getIdentifier()+csvTextDelimiter);
+			Language lang =APILocator.getLanguageAPI().getLanguage(content.getLanguageId());
+			pr.print(csvSeparatorDelimiter+csvTextDelimiter +lang.getLanguageCode()+csvTextDelimiter);
+			pr.print(csvSeparatorDelimiter+csvTextDelimiter+lang.getCountryCode()+csvTextDelimiter);
+
+			for (Field f : stFields) {
+				if(fields.size()== 0 || fields.contains(f)){
+					try {
+						//we cannot export fields of these types
+						if (f.getFieldType().equals(Field.FieldType.BUTTON.toString()) || 
+								f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString()) ||
+								f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())){
+							continue;
+						}
+						Object value = "";
+						if(conAPI.getFieldValue(content,f) != null)  
+							value = conAPI.getFieldValue(content,f);
+						String text = "";
+						String assetPath = "";
+						String hostname = "";
+
+						if(f.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())){
+							if(UtilMethods.isSet(value)){
+								try{
+									text = value.toString();
+									if(text.endsWith(",")){
+										text = text.substring (0, text.length()-1);
+									}
+									Host host = APILocator.getHostAPI().find(text, user, false);
+									hostname = host.getHostname();
+								}catch(Exception e){
+									Logger.error(ContentExporterThread.class, e.getMessage());
+								}
+							}
+						}else if(f.getFieldType().equals(Field.FieldType.FILE.toString()) || f.getFieldType().equals(Field.FieldType.IMAGE.toString())){
+							text = value.toString();
+							if(UtilMethods.isSet(text)){
+								try{
+									Contentlet asset = conAPI.findContentletByIdentifier(text, false, (language==-1?APILocator.getLanguageAPI().getDefaultLanguage().getId():language), user, false);
+									FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(asset);
+									text = fileAsset.getFileName();
+									if(text.endsWith(",")){
+										text = text.substring (0, text.length()-1);
+									}
+									assetPath ="http://"+hostAPI.find(fileAsset.getHost(), user, false).getHostname()+fileAsset.getURI();
+								}catch(Exception e){
+									Logger.error(ContentExporterThread.class, e.getMessage());
+								}
+							}
+						}else if(f.getFieldType().equals(Field.FieldType.BINARY.toString())){								
+							File binaryfile = content.getBinary(f.getVelocityVarName()); 								
+							if(UtilMethods.isSet(binaryfile)){
+								try{
+									text = binaryfile.getName();
+									if(text.endsWith(",")){
+										text = text.substring (0, text.length()-1);
+									}
+									assetPath = "http://"+hostAPI.find(content.getHost(), user, false).getHostname()+"/contentAsset/raw-data/"+content.getIdentifier()+"/"+ f.getVelocityVarName() + "/" + content.getInode();
+								}catch(Exception e){
+									Logger.error(ContentExporterThread.class, e.getMessage());
+								}
+							}
+						}else if(f.getFieldType().equals(Field.FieldType.CATEGORY.toString())){
+
+							Category category = catAPI.find(f.getValues(), user, false);
+							List<Category> children = catList;
+							List<Category> allChildren= catAPI.getAllChildren(category, user, false);
+
+
+							if (children.size() >= 1 && catAPI.canUseCategory(category, user, false)) {
+								//children = (List<Category>)CollectionUtils.retainAll(catList, children);
+								for(Category cat : children){
+									if(allChildren.contains(cat)){
+										if(UtilMethods.isSet(cat.getKey())){
+											text = text+csvSeparatorDelimiter+cat.getKey();
+										}else{
+											text = text+csvSeparatorDelimiter+cat.getCategoryName();
+										}
+									}
+								}
+							}
+							if(UtilMethods.isSet(text)){
+								text=text.substring(1);
+							}
+						}else{
+
+							if (value instanceof Date || value instanceof Timestamp) {
+								if(f.getFieldType().equals(Field.FieldType.DATE.toString())) {
+									SimpleDateFormat formatter = new SimpleDateFormat (WebKeys.DateFormats.EXP_IMP_DATE);
+									text = formatter.format(value);
+								} else if(f.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
+									SimpleDateFormat formatter = new SimpleDateFormat (WebKeys.DateFormats.EXP_IMP_DATETIME);
+									text = formatter.format(value);
+								} else if(f.getFieldType().equals(Field.FieldType.TIME.toString())) {
+									SimpleDateFormat formatter = new SimpleDateFormat (WebKeys.DateFormats.EXP_IMP_TIME);
+									text = formatter.format(value);
+								}                                    
+							} else {
+								text = value.toString();
+								if(text.endsWith(",")){
+									text = text.substring (0, text.length()-1);
+								}
+							}
+
+						}
+						//Windows carriage return conversion
+						text = text.replaceAll("\r","");
+
+						if(f.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())){
+							pr.print(csvSeparatorDelimiter+csvTextDelimiter+text+csvTextDelimiter);
+						}else if(f.getFieldType().equals(Field.FieldType.FILE.toString()) || f.getFieldType().equals(Field.FieldType.IMAGE.toString()) ||
+								f.getFieldType().equals(Field.FieldType.BINARY.toString())){
+							pr.print(csvSeparatorDelimiter+csvTextDelimiter+text+csvTextDelimiter);
+							pr.print(csvSeparatorDelimiter+csvTextDelimiter+assetPath+csvTextDelimiter);
+						}else if(text.contains(",") || text.contains("\n")) {
+							//Double quotes replacing
+							text = text.replaceAll("\"","\"\"");
+							//pr.print(csvSeparatorDelimiter+"\""+text+"\"");
+							pr.print(csvSeparatorDelimiter+csvTextDelimiter+text+csvTextDelimiter);
+						} else{
+							pr.print(csvSeparatorDelimiter+csvTextDelimiter+text+csvTextDelimiter);						
+						}
+					}catch(Exception e){
+						pr.print(csvSeparatorDelimiter);
+						Logger.error(this,e.getMessage(),e);
+					}
+				}
+			}
+			pr.print("\r\n");
+		}
+
+		pr.flush();
+		pr.close();
+		HibernateUtil.closeSession();
 	}
 
 	/**
