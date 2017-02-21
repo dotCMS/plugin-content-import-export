@@ -16,8 +16,13 @@ public class ContentExporterForm extends SchedulerForm {
 	private String structure = "";
 	private long language = -1;
 	private String[] fields = new String[0];
+	private boolean haveFileTarget;
 	private String filePath;
+	private String fileAsset;
+	private String fileAssetHost;
+	private String fileAssetPath;
 	private boolean overWriteFile=false;
+	private boolean newForm;
 	private String reportEmail;
 	private String csvSeparatorDelimiter;
 	private String csvTextDelimiter;
@@ -73,7 +78,21 @@ public class ContentExporterForm extends SchedulerForm {
 		this.cronExpression = cronExpression;
 	}
 
-	private boolean newForm;
+	/**
+	 * Indicate if a file asset was set
+	 * @return true if a file asset was set, false if not
+	 */
+	public boolean isHaveFileTarget() {
+		return haveFileTarget;
+	}
+
+	/**
+	 * Update the variable that shows if a file asset was set or not
+	 * @param haveFileSource
+	 */
+	public void setHaveFileTarget(boolean haveFileTarget) {
+		this.haveFileTarget = haveFileTarget;
+	}
 		
 	public ContentExporterForm() {
 		super();
@@ -106,6 +125,48 @@ public class ContentExporterForm extends SchedulerForm {
 	 */
 	public void setFilePath(String filePath) {
 		this.filePath = filePath;
+	}
+
+	/**
+	 * @return the fileAsset
+	 */
+	public String getFileAsset() {
+		return fileAsset;
+	}
+
+	/**
+	 * @param fileAsset the fileAsset to set
+	 */
+	public void setFileAsset(String fileAsset) {
+		this.fileAsset = fileAsset;
+	}
+
+	/**
+	 * @return the fileAssetHost
+	 */
+	public String getFileAssetHost() {
+		return fileAssetHost;
+	}
+
+	/**
+	 * @param fileAssetHost the fileAssetHost to set
+	 */
+	public void setFileAssetHost(String fileAssetHost) {
+		this.fileAssetHost = fileAssetHost;
+	}
+
+	/**
+	 * @return the fileAssetPath
+	 */
+	public String getFileAssetPath() {
+		return fileAssetPath;
+	}
+
+	/**
+	 * @param fileAsset the fileAsset to set
+	 */
+	public void setFileAssetPath(String fileAssetPath) {
+		this.fileAssetPath = fileAssetPath;
 	}
 
 	/**
