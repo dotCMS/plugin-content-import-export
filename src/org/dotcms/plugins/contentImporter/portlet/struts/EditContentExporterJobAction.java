@@ -117,9 +117,24 @@ public class EditContentExporterJobAction extends DotPortletAction {
 					hasErrors = true;
 				}
 
-				if (!UtilMethods.isSet(contentExporterForm.getFilePath())) {
-					SessionMessages.add(req, "error", "message.content.exporter.file.path.required");
-					hasErrors = true;
+				if(!contentExporterForm.isHaveFileTarget()){
+					if (!UtilMethods.isSet(contentExporterForm.getFilePath())) {
+						SessionMessages.add(req, "error", "message.content.exporter.file.path.required");
+						hasErrors = true;
+					}
+				} else {
+					if(!UtilMethods.isSet(contentExporterForm.getFileAsset())){
+						SessionMessages.add(req, "error", "message.content.exporter.file.asset.required");
+						hasErrors = true;
+					}
+					if(!UtilMethods.isSet(contentExporterForm.getFileAssetHost())){
+						SessionMessages.add(req, "error", "message.content.exporter.file.asset.host.required");
+						hasErrors = true;
+					}
+					if(!UtilMethods.isSet(contentExporterForm.getFileAssetPath())){
+						SessionMessages.add(req, "error", "message.content.exporter.file.asset.path.required");
+						hasErrors = true;
+					}
 				}
 
 				if ((contentExporterForm.getFields() != null) && (0 < contentExporterForm.getFields().length)) {
@@ -355,9 +370,16 @@ public class EditContentExporterJobAction extends DotPortletAction {
 			properties.put("fields", fields.toString());
 		}
 
+		properties.put("haveFileTarget", contentExporterForm.isHaveFileTarget());
 		if (UtilMethods.isSet(contentExporterForm.getFilePath()))
 			properties.put("filePath", contentExporterForm.getFilePath());
-		
+		if (UtilMethods.isSet(contentExporterForm.getFileAsset()))
+			properties.put("fileAsset", contentExporterForm.getFileAsset());
+		if (UtilMethods.isSet(contentExporterForm.getFileAssetHost()))
+			properties.put("fileAssetHost", contentExporterForm.getFileAssetHost());
+		if (UtilMethods.isSet(contentExporterForm.getFileAssetPath()))
+			properties.put("fileAssetPath", contentExporterForm.getFileAssetPath());
+
 		if (UtilMethods.isSet(contentExporterForm.getReportEmail()))
 			properties.put("reportEmail", contentExporterForm.getReportEmail());
 
@@ -751,7 +773,14 @@ public class EditContentExporterJobAction extends DotPortletAction {
 			}
 
 			contentExporterForm.setFields(fields);
+
 			contentExporterForm.setFilePath((String) properties.get("filePath"));
+			contentExporterForm.setFileAsset((String) properties.get("fileAsset"));
+			contentExporterForm.setFileAssetHost((String) properties.get("fileAssetHost"));
+			contentExporterForm.setFileAssetPath((String) properties.get("fileAssetPath"));
+			if (UtilMethods.isSet(properties.get("haveFileTarget")))
+				contentExporterForm.setHaveFileTarget((Boolean) properties.get("haveFileTarget"));
+
 			contentExporterForm.setOverWriteFile((Boolean) properties.get("overWriteFile"));
 			contentExporterForm.setReportEmail((String) properties.get("reportEmail"));
 			contentExporterForm.setCsvSeparatorDelimiter((String) properties.get("csvSeparatorDelimiter"));

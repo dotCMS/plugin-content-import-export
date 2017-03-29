@@ -11,7 +11,10 @@ public class ContentImporterForm extends SchedulerForm {
 	private String structure = "";
 	private long language = 0;
 	private String[] fields = new String[0];
+	private boolean haveFileSource;
 	private String filePath;
+	private String fileAsset;
+	private String fileAssetQuery;
 	private String reportEmail;
 	private String csvSeparatorDelimiter;
 	private String csvTextDelimiter;
@@ -83,7 +86,23 @@ public class ContentImporterForm extends SchedulerForm {
 	public void setCronExpression(String cronExpression) {
 		this.cronExpression = cronExpression;
 	}
-	
+
+	/**
+	 * Indicate if a file asset was set
+	 * @return true if a file asset was set, false if not
+	 */
+	public boolean isHaveFileSource() {
+		return haveFileSource;
+	}
+
+	/**
+	 * Update the variable that shows if a file asset was set or not
+	 * @param haveFileSource
+	 */
+	public void setHaveFileSource(boolean haveFileSource) {
+		this.haveFileSource = haveFileSource;
+	}
+
 	public ContentImporterForm() {
 		super();
 		this.newForm = true;
@@ -115,6 +134,34 @@ public class ContentImporterForm extends SchedulerForm {
 	 */
 	public void setFilePath(String filePath) {
 		this.filePath = filePath;
+	}
+
+	/**
+	 * @return the fileAsset
+	 */
+	public String getFileAsset() {
+		return fileAsset;
+	}
+
+	/**
+	 * @param fileAsset the fileAsset to set
+	 */
+	public void setFileAsset(String fileAsset) {
+		this.fileAsset = fileAsset;
+	}
+
+	/**
+	 * @return the fileAssetQuery
+	 */
+	public String getFileAssetQuery() {
+		return fileAssetQuery;
+	}
+
+	/**
+	 * @param fileAssetQuery the fileAssetQuery to set
+	 */
+	public void setFileAssetQuery(String fileAssetQuery) {
+		this.fileAssetQuery = fileAssetQuery;
 	}
 
 	/**

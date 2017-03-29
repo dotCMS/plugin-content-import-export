@@ -55,7 +55,9 @@ If you are going to generate a new task, you need to enter:
 
 6. The Fields to export from the structure. If no fields are selected, all the fields in the structure will be exported. If some fields are selected, just those  and the system fields mentioned next will be exported to the csv file:identifier, language and country.
 
-7. The File Path where the csv file(s) zip file will be located. Here you should specify an existing folder where all the compressed csv file will be exported.
+7. The File Path where the csv file(s) zip file will be located. 
+7.a. File in the server's filesystem .- Here you should specify an existing folder in the server running dotCMS  where all the compressed csv file will be exported.
+7.b. Content File .- In this case, the exported file will be stored as a fileasset in your dotCMS instance. You will need to specify the File Content Type to be assigned to the file and the combiantion of host (or site) plus  folder where the file will be stored.
 
 8. Overwrite export file?. When checked, every execution of the job will overwrite the previously generated file. If not, on every job execution will create a new file.
 
@@ -85,7 +87,9 @@ If you are going to generate a new task, you need to enter:
 
 6. The Key Fields of the structure, in case you want the import to update existing content.
 
-7. The File Paht where the csv file(s) is/are located. If you specify a folder, all the csv files in it will be imported.
+7. The source from where the content to be imported can be loaded:
+7.a File in the server's filesystem .- In this case, the CSV file will be read as a file in the filesystem. You will need to enter the path of the folder from where any file with extension .csv will be read.
+7.b Content File .- In this case, the CSV will be a file asset read as content from your dotCMS instance. You will need to enter the File Content Type associated to the file. You can also define a lucene query that will allow you to filter the files under the specified Content Type that will be pulled and loaded during the execution of the import.
 
 8. The report email. Use this parameter if you want to to receive a notification every time the content import runs. The email will indicate if the process finishes sucessfully or if there any errors importing the file.
 

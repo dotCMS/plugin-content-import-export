@@ -81,6 +81,7 @@ public class EditContentImporterJobAction extends DotPortletAction {
 						hasErrors = true;
 					}
 				}
+
 				Date endDate = null;
 				if (contentImporterForm.isHaveEndDate()) {
 					try {
@@ -115,9 +116,17 @@ public class EditContentImporterJobAction extends DotPortletAction {
 					hasErrors = true;
 				}
 
-				if (!UtilMethods.isSet(contentImporterForm.getFilePath())) {
-					SessionMessages.add(req, "error", "message.content.importer.file.path.required");
-					hasErrors = true;
+
+				if(!contentImporterForm.isHaveFileSource()){
+					if(!UtilMethods.isSet(contentImporterForm.getFilePath())){
+						SessionMessages.add(req, "error", "message.content.importer.file.path.required");
+						hasErrors = true;
+					}
+				} else {
+					if(!UtilMethods.isSet(contentImporterForm.getFileAsset())){
+						SessionMessages.add(req, "error", "message.content.importer.file.asset.required");
+						hasErrors = true;
+					}
 				}
 
 				if ((contentImporterForm.getFields() != null) && (0 < contentImporterForm.getFields().length)) {
@@ -324,8 +333,13 @@ public class EditContentImporterJobAction extends DotPortletAction {
 			properties.put("fields", fields.toString());
 		}
 
+		properties.put("haveFileSource", contentImporterForm.isHaveFileSource());
 		if (UtilMethods.isSet(contentImporterForm.getFilePath()))
 			properties.put("filePath", contentImporterForm.getFilePath());
+		if (UtilMethods.isSet(contentImporterForm.getFileAsset()))
+			properties.put("fileAsset", contentImporterForm.getFileAsset());
+		if (UtilMethods.isSet(contentImporterForm.getFileAssetQuery()))
+			properties.put("fileAssetQuery", contentImporterForm.getFileAssetQuery());
 
 		if (UtilMethods.isSet(contentImporterForm.getReportEmail()))
 			properties.put("reportEmail", contentImporterForm.getReportEmail());
@@ -718,7 +732,13 @@ public class EditContentImporterJobAction extends DotPortletAction {
 			}
 
 			contentImporterForm.setFields(fields);
+
 			contentImporterForm.setFilePath((String) properties.get("filePath"));
+			contentImporterForm.setFileAsset((String) properties.get("fileAsset"));
+			contentImporterForm.setFileAssetQuery((String) properties.get("fileAssetQuery"));
+			if (UtilMethods.isSet(properties.get("haveFileSource")))
+				contentImporterForm.setHaveFileSource((Boolean) properties.get("haveFileSource"));
+
 			contentImporterForm.setReportEmail((String) properties.get("reportEmail"));
 			contentImporterForm.setCsvSeparatorDelimiter((String) properties.get("csvSeparatorDelimiter"));
 			contentImporterForm.setCsvTextDelimiter((String) properties.get("csvTextDelimiter"));			

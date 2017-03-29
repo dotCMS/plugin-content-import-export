@@ -303,9 +303,25 @@ function submitParent() {
 				}
 			}
 		}
-		if (trimString(document.getElementById("filePath").value) == '') {
-			alert("<%=LanguageUtil.get(pageContext,"message.content.exporter.file.path.required")%>");
-			return false;
+
+		if(document.getElementById("haveFilePath").checked){
+			if (trimString(document.getElementById("filePath").value) == '') {
+				alert("<%=LanguageUtil.get(pageContext,"message.content.exporter.filePath.required")%>");
+				return false;
+			}
+		} else if(document.getElementById("haveFileAsset").checked){
+			if (trimString(document.getElementById("fileAsset").value) == '') {
+				alert("<%=LanguageUtil.get(pageContext,"message.content.exporter.fileAsset.required")%>");
+				return false;
+			}
+			if (trimString(document.getElementById("fileAssetHost").value) == '') {
+				alert("<%=LanguageUtil.get(pageContext,"message.content.exporter.fileAssetHost.required")%>");
+				return false;
+			}
+			if (trimString(document.getElementById("fileAssetPath").value) == '') {
+				alert("<%=LanguageUtil.get(pageContext,"message.content.exporter.fileAssetPath.required")%>");
+				return false;
+			}
 		}
 
 		if (document.ContentExporterForm.fields != null) {
@@ -378,6 +394,18 @@ function submitParent() {
 		}else{
 			document.getElementById("regularDates").style.display="none";
 			document.getElementById("cronDiv").style.display="none";
+		}
+	}
+	function toggleFileTarget(elem){
+		if(elem.checked && elem.value =="false"){
+			document.getElementById("filePathDiv").style.display="block";
+			document.getElementById("fileAssetDiv").style.display="none";
+		}else if(elem.checked && elem.value =="true"){	
+			document.getElementById("filePathDiv").style.display="none";
+			document.getElementById("fileAssetDiv").style.display="block";
+		}else{
+			document.getElementById("filePathDiv").style.display="none";
+			document.getElementById("fileAssetDiv").style.display="none";
 		}
 	}
 </script>
@@ -910,18 +938,58 @@ function submitParent() {
 				</table>
 			</dd>
 			</div>
-			<dt><img src="/html/images/icons/required.gif"/><%=LanguageUtil.get(pageContext,"content-exporter-file-path")%>:
-				<br/><em><%=LanguageUtil.get(pageContext,"content-exporter-file-path-hint")%></em>
-			</dt>
-			<dd><input class="form-text" dojoType="dijit.form.TextBox" name="filePath" size="75" id="filePath" value="<%= UtilMethods.isSet(contentExporterForm.getFilePath()) ? contentExporterForm.getFilePath() : "" %>" style="width: 300px;" type="text" ></dd>
-			<dt><%=LanguageUtil.get(pageContext,"content-exporter-overwrite-file")%>:
-				<br/><em><%=LanguageUtil.get(pageContext,"content-exporter-overwrite-file-hint")%></em>
-			</dt>
-			<dd><br/><input type="checkbox" class="form-text" dojoType="dijit.form.CheckBox" name="overWriteFile" id="overWriteFile" value="true" <%= contentExporterForm.isOverWriteFile() ? "checked" : "" %> ></dd>
-			<dt><%=LanguageUtil.get(pageContext,"content-exporter-report-email")%>:
-				<br/><em><%=LanguageUtil.get(pageContext,"content-exporter-report-email-hint")%></em>
-			</dt>
-			<dd><br/><br/><input class="form-text" dojoType="dijit.form.TextBox" name="reportEmail" size="75" id="reportEmail" value="<%= UtilMethods.isSet(contentExporterForm.getReportEmail()) ? contentExporterForm.getReportEmail() : "" %>" style="width: 300px;" type="text" ></dd>
+			<dt><img src="/html/images/icons/required.gif"/><%=LanguageUtil.get(pageContext,"content-exporter-file-target")%>:</dt>
+			<dd>
+				<input type="radio" dojoType="dijit.form.RadioButton" <%=(!contentExporterForm.isHaveFileTarget()) ? "checked" : "" %> id="haveFilePath" name="haveFileTarget" value="false" onclick="toggleFileTarget(this)" /><%=LanguageUtil.get(pageContext,"content-exporter-use-filepath")%>
+				<div id="filePathDiv" style="margin-left:20px;">
+					<img src="/html/images/icons/required.gif"/><%=LanguageUtil.get(pageContext,"content-exporter-file-path-title")%><input class="form-text" dojoType="dijit.form.TextBox" name="filePath" size="75" id="filePath" value="<%= UtilMethods.isSet(contentExporterForm.getFilePath()) ? contentExporterForm.getFilePath() : "" %>" style="width: 300px;" type="text" >
+					<br/>
+					<em><%=LanguageUtil.get(pageContext,"content-exporter-file-path-hint")%></em>
+					<br/>
+					<br/>
+					<%=LanguageUtil.get(pageContext,"content-exporter-overwrite-file")%>:<input type="checkbox" class="form-text" dojoType="dijit.form.CheckBox" name="overWriteFile" id="overWriteFile" value="true" <%= contentExporterForm.isOverWriteFile() ? "checked" : "" %> >
+					<br/>
+					<em><%=LanguageUtil.get(pageContext,"content-exporter-overwrite-file-hint")%></em>
+				</div>
+				<br/>
+				<input type="radio" dojoType="dijit.form.RadioButton" <%=(contentExporterForm.isHaveFileTarget()) ? "checked" : "" %> id="haveFileAsset" name="haveFileTarget" value="true" onclick="toggleFileTarget(this)" /><%=LanguageUtil.get(pageContext,"content-exporter-use-fileasset")%>
+				<div id="fileAssetDiv" style="margin-left:20px;">
+					<img src="/html/images/icons/required.gif"/><%=LanguageUtil.get(pageContext,"content-exporter-file-asset-title")%><select dojoType="dijit.form.FilteringSelect" name="fileAsset" id="fileAsset" value="<%= UtilMethods.isSet(contentExporterForm.getFileAsset()) ? contentExporterForm.getFileAsset() : "" %>" >
+						<%
+							for( Structure structure : APILocator.getStructureAPI().find( APILocator.getUserAPI().getSystemUser(), false, false, "structuretype = "+ Structure.STRUCTURE_TYPE_FILEASSET, "name", Integer.MAX_VALUE, 0, "asc" ) ) {
+						%>
+							<option <%= structure.getVelocityVarName().equals(contentExporterForm.getFileAsset()) ? "selected" : "" %> value="<%= structure.getVelocityVarName() %>"><%= structure.getName() %></option>
+						<%
+							}
+						%>
+					</select>
+					<br/>
+					<em><%=LanguageUtil.get(pageContext,"content-exporter-file-asset-hint")%></em>
+					<br/>
+					<br/>
+					<img src="/html/images/icons/required.gif"/><%=LanguageUtil.get(pageContext,"content-exporter-file-asset-host-title")%><select dojoType="dijit.form.FilteringSelect" name="fileAssetHost" id="fileAssetHost" value="<%= UtilMethods.isSet(contentExporterForm.getFileAssetHost()) ? contentExporterForm.getFileAssetHost() : APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), false).getHostname() %>" >
+						<%
+							for( Host host : APILocator.getHostAPI().findAll( APILocator.getUserAPI().getSystemUser(), false) ) {
+								if (!APILocator.getHostAPI().findSystemHost().getHostname().equals(host.getHostname())) {
+						%>
+							<option <%= (host.getHostname().equals(contentExporterForm.getFileAssetHost()) || (!UtilMethods.isSet(contentExporterForm.getFileAssetHost()) && host.getHostname().equals(APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), false).getHostname())))  ? "selected" : "" %> value="<%= host.getHostname() %>"><%= host.getHostname() %></option>
+						<%
+								}
+							}
+						%>
+					</select>
+					<br/>
+					<em><%=LanguageUtil.get(pageContext,"content-exporter-file-asset-host-hint")%></em>
+					<br/>
+					<br/>
+					<img src="/html/images/icons/required.gif"/><%=LanguageUtil.get(pageContext,"content-exporter-file-asset-path-title")%><input class="form-text" dojoType="dijit.form.TextBox" name="fileAssetPath" size="75" id="fileAssetPath" value="<%= UtilMethods.isSet(contentExporterForm.getFileAssetPath()) ? contentExporterForm.getFileAssetPath() : "" %>" style="width: 300px;" type="text" >
+					<br/>
+					<em><%=LanguageUtil.get(pageContext,"content-exporter-file-asset-path-hint")%></em>
+				</div>
+			</dd>
+			<script>
+			toggleFileTarget(document.getElementById('haveFilePath'));
+			</script>
 			<dt><img src="/html/images/icons/required.gif"/><%=LanguageUtil.get(pageContext,"content-exporter-csv-separator-delimiter")%>:
 				<br/><em><%=LanguageUtil.get(pageContext,"content-exporter-csv-separator-delimiter-hint")%></em>
 			</dt>
@@ -930,6 +998,10 @@ function submitParent() {
 				<br/><em><%=LanguageUtil.get(pageContext,"content-exporter-csv-text-delimiter-hint")%></em>
 			</dt>
 			<dd><input class="form-text" dojoType="dijit.form.TextBox" name="csvTextDelimiter" size="75" id="csvTextDelimiter" value="<%= UtilMethods.isSet(contentExporterForm.getCsvTextDelimiter()) ? contentExporterForm.getCsvTextDelimiter().replaceAll("\"","&quot;"):"&quot;" %>" style="width: 300px;" type="text" size="3"></dd>
+			<dt><%=LanguageUtil.get(pageContext,"content-exporter-report-email")%>:
+				<br/><em><%=LanguageUtil.get(pageContext,"content-exporter-report-email-hint")%></em>
+			</dt>
+			<dd><br/><br/><input class="form-text" dojoType="dijit.form.TextBox" name="reportEmail" size="75" id="reportEmail" value="<%= UtilMethods.isSet(contentExporterForm.getReportEmail()) ? contentExporterForm.getReportEmail() : "" %>" style="width: 300px;" type="text" ></dd>
 		</dl>
 
 	</div>
@@ -989,6 +1061,12 @@ dojo.addOnLoad(function() {
 		amPm('atTime');
 		amPm('betweenFrom');
 		amPm('betweenTo');
-		updateDateOnly('everyDate');			    
+		updateDateOnly('everyDate');
+
+	<%if(!contentExporterForm.isHaveFileTarget()){%> 
+		toggleFileTarget(document.getElementById("haveFilePath"));
+	<%} else {%>			
+		toggleFileTarget(document.getElementById("haveFileAsset"));
+	<% } %>
 });
 </script>
