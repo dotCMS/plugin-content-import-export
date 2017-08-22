@@ -28,8 +28,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -240,10 +238,6 @@ public class ContentImporterThread implements Job {
 
 				APILocator.getVersionableAPI().setLive(contentlet);
 
-				LiveCache.removeAssetFromCache(contentlet);
-				LiveCache.addToLiveAssetToCache(contentlet);
-				WorkingCache.removeAssetFromCache(contentlet);
-				WorkingCache.addToWorkingAssetToCache(contentlet);
 				RefreshMenus.deleteMenu(folder);
 				CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
 				CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);

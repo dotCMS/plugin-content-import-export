@@ -50,7 +50,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -291,7 +290,8 @@ public class ContentletUtil {
 
 		//Importing headers and storing them in a hashmap to be reused later in the whole import process
 		List<Field> fields = FieldsCache.getFieldsByStructureInode(structure.getInode());
-		List<Relationship> structureRelationships = RelationshipFactory.getAllRelationshipsByStructure(structure);
+		List<Relationship> structureRelationships = FactoryLocator.getRelationshipFactory()
+                .byContentType(structure);
 		List<String> requiredFields = new ArrayList<String>();
 		List<String> headerFields = new ArrayList<String>();
 
@@ -694,25 +694,27 @@ public class ContentletUtil {
 				{
 					relatedContentlets = conAPI.checkoutWithQuery(relatedQuery, user, false);
 
-					//validate if the contenlet retrieved are from the correct typ
-					if(RelationshipFactory.isParentOfTheRelationship(relationship,structure))
+					//validate if the contenlet retrieved are from the correct type
+					if(FactoryLocator.getRelationshipFactory()
+                            .isParent(relationship,structure))
 					{
 						for(Contentlet contentlet : relatedContentlets)
 						{
 							Structure relatedStructure = contentlet.getStructure();
-							if(!(RelationshipFactory.isChildOfTheRelationship(relationship,relatedStructure)))
+							if(!(FactoryLocator.getRelationshipFactory().isChild(relationship,relatedStructure)))
 							{
 								error = true;
 								break;
 							}
 						}
 					}
-					if(RelationshipFactory.isChildOfTheRelationship(relationship,structure))
+					if(FactoryLocator.getRelationshipFactory().isChild(relationship,structure))
 					{
 						for(Contentlet contentlet : relatedContentlets)
 						{
 							Structure relatedStructure = contentlet.getStructure();
-							if(!(RelationshipFactory.isParentOfTheRelationship(relationship,relatedStructure)))
+							if(!(FactoryLocator.getRelationshipFactory()
+		                            .isParent(relationship,relatedStructure)))
 							{
 								error = true;
 								break;

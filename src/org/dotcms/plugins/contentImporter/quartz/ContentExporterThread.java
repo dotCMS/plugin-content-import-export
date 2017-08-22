@@ -150,7 +150,7 @@ public class ContentExporterThread implements Job {
 		try {
 			User systemUser = APILocator.getUserAPI().getSystemUser();
 			Host host = APILocator.getHostAPI().findByName(fileAssetHost, systemUser, false);
-			Structure fileAssetStructure = CacheLocator.getContentTypeCache().getStructureByName(fileAsset);
+			Structure fileAssetStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(fileAsset);
 
 			// Get or create folder
 			Folder folder = APILocator.getFolderAPI().findFolderByPath(fileAssetPath, host, systemUser, false);
