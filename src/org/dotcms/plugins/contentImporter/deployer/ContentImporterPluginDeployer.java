@@ -2,7 +2,6 @@ package org.dotcms.plugins.contentImporter.deployer;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.LayoutAPI;
@@ -16,7 +15,6 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.ejb.PortletManagerUtil;
-import com.liferay.portal.ejb.UserUtil;
 import com.liferay.portal.model.Company;
 import com.dotmarketing.business.Layout;
 import com.liferay.portal.model.Portlet;
