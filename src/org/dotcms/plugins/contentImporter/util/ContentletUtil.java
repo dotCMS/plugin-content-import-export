@@ -325,7 +325,7 @@ public class ContentletUtil {
 			headerFields.add(header);
 
 			for (Field field : fields) {
-				if (field.getFieldName().equalsIgnoreCase(header)) {
+				if (field.getVelocityVarName().equalsIgnoreCase(header)) {
 					if (field.getFieldType().equals(Field.FieldType.BUTTON.toString())){
 						found = true;
 
