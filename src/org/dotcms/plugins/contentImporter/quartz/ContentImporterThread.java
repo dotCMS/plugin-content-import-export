@@ -174,9 +174,8 @@ public class ContentImporterThread implements Job {
 						fileName = fileName.substring(0, index);
 
 					try {
-
 						HashMap<String, List<String>> currentResults = importInputStream(
-							fileAssetCont.getFileInputStream(), csvTextDelimiter, csvSeparatorDelimiter,
+							fileAssetCont.getInputStream(), csvTextDelimiter, csvSeparatorDelimiter,
 							structure, fields, fileAssetCont.getLanguageId(), isMultilanguage,
 							publishContent, deleteAllContent, saveWithoutVersions
 						);
