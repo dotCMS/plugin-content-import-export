@@ -297,7 +297,7 @@ public class ContentletUtil {
 
 		for(Field field:fields){
 			if(field.isRequired()){
-				requiredFields.add(field.getFieldName());
+				requiredFields.add(field.getVelocityVarName());
 			}
 		}
 
