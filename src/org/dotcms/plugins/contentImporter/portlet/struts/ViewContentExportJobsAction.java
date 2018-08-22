@@ -8,9 +8,9 @@ import com.dotcms.repackage.javax.portlet.RenderResponse;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import javax.servlet.jsp.PageContext;
 
-import com.dotcms.repackage.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.org.apache.struts.action.ActionForward;
-import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
 import org.dotcms.plugins.contentImporter.util.ContentImporterQuartzUtils;
 
 import com.dotmarketing.portal.struts.DotPortletAction;

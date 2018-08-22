@@ -26,8 +26,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import com.dotcms.repackage.org.apache.struts.action.ActionForm;
-import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionMapping;
 import org.dotcms.plugins.contentImporter.portlet.form.ImportExternalContentletsForm;
 import org.dotcms.plugins.contentImporter.util.ContentletUtil;
 

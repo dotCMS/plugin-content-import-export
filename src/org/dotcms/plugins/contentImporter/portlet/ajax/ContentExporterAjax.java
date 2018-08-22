@@ -49,9 +49,14 @@ public class ContentExporterAjax {
 		}
 
 		try {
-			WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(struct);
-			if(scheme.isMandatory() && !UtilMethods.isSet(scheme.getEntryActionId())){
-				allowImport = false;
+			final List<WorkflowScheme> schemeList = APILocator.getWorkflowAPI().findSchemesForStruct(struct);
+			if (null != schemeList) {
+				for (final WorkflowScheme scheme : schemeList) {
+					if (scheme.isMandatory() && !UtilMethods.isSet(scheme.getEntryActionId())) {
+						allowImport = false;
+						break;
+					}
+				}
 			}
 		} catch (DotDataException e) {
 			Logger.error(this, e.getMessage());
@@ -85,9 +90,14 @@ public class ContentExporterAjax {
 		}
 
 		try {
-			WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(struct);
-			if(scheme.isMandatory() && !UtilMethods.isSet(scheme.getEntryActionId())){
-				allowImport = false;
+			final List<WorkflowScheme> schemeList = APILocator.getWorkflowAPI().findSchemesForStruct(struct);
+			if (null != schemeList) {
+				for (final WorkflowScheme scheme : schemeList) {
+					if (scheme.isMandatory() && !UtilMethods.isSet(scheme.getEntryActionId())) {
+						allowImport = false;
+						break;
+					}
+				}
 			}
 		} catch (DotDataException e) {
 			Logger.error(this, e.getMessage());
